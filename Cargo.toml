@@ -1,5 +1,6 @@
 [workspace]
 members = [
+	"binary_reader",
 	"clr_lite",
 	"test_program"
 ]

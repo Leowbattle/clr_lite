@@ -1,3 +1,9 @@
+use clr_lite::pe::*;
+
 fn main() {
-	dbg!(std::mem::size_of::<clr_lite::metadata::TablesStream>());
+	let data =
+		include_bytes!(r"C:\Program Files\dotnet\shared\Microsoft.NETCore.App\3.1.2\System.dll");
+
+	let pe = PeInfo::parse(data);
+	dbg!(pe);
 }
