@@ -1,6 +1,3 @@
-pub mod coded_index;
-pub use coded_index::*;
-
 pub mod module;
 pub use module::*;
 

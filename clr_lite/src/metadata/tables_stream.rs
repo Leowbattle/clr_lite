@@ -1,8 +1,8 @@
 #![allow(non_upper_case_globals)]
 
+use super::coded_index::*;
 use super::tables::*;
 use super::{BlobHandle, GuidHandle, StringHandle};
-use crate::metadata;
 
 use binary_reader::*;
 
@@ -11,11 +11,46 @@ use std::io;
 pub struct TableReader<'data, 'header> {
 	pub reader: BinaryReader<'data>,
 	pub header: &'header TablesHeader,
+
+	wide_string_handle: bool,
+	wide_guid_handle: bool,
+	wide_blob_handle: bool,
+}
+
+macro_rules! read_coded_index {
+	($name:ident, $type:ty, $tag_bitmask:expr, $($tag_value:expr => $tag_type:ident),*) => {
+		pub fn $name(&mut self) -> io::Result<$type> {
+			let data = self.reader.read::<u16>()?;
+			let tag = data & $tag_bitmask;
+			let index = (data & !$tag_bitmask) as usize;
+			match tag {
+				$($tag_value => Ok(<$type>::$tag_type(index.into()))),*,
+				_ => Err(io::Error::from(io::ErrorKind::InvalidData)),
+			}
+		}
+	};
 }
 
 impl<'data, 'header> TableReader<'data, 'header> {
 	pub(crate) fn new(reader: BinaryReader<'data>, header: &'header TablesHeader) -> Self {
-		Self { reader, header }
+		// let wide_handles = header
+		// 	.tables
+		// 	.iter()
+		// 	.map(|(&k, &v)| (k, v > 65535))
+		// 	.collect();
+
+		if header.tables.iter().any(|(&k, &v)| v > 65535) {
+			panic!("Please implement 4 byte table indices");
+		}
+
+		Self {
+			reader,
+			header,
+
+			wide_string_handle: header.heap_sizes.contains(HeapSizeFlags::StringBit),
+			wide_guid_handle: header.heap_sizes.contains(HeapSizeFlags::GuidBit),
+			wide_blob_handle: header.heap_sizes.contains(HeapSizeFlags::BlobBit),
+		}
 	}
 
 	pub fn read_handle(&mut self, table: TableType) -> io::Result<usize> {
@@ -43,7 +78,7 @@ impl<'data, 'header> TableReader<'data, 'header> {
 	}
 
 	pub fn read_string_handle(&mut self) -> io::Result<StringHandle> {
-		if self.header.heap_sizes.contains(HeapSizeFlags::StringBit) {
+		if self.wide_string_handle {
 			Ok((self.reader.read::<u32>()? as usize).into())
 		} else {
 			Ok((self.reader.read::<u16>()? as usize).into())
@@ -51,7 +86,7 @@ impl<'data, 'header> TableReader<'data, 'header> {
 	}
 
 	pub fn read_guid_handle(&mut self) -> io::Result<GuidHandle> {
-		if self.header.heap_sizes.contains(HeapSizeFlags::GuidBit) {
+		if self.wide_guid_handle {
 			Ok((self.reader.read::<u32>()? as usize).into())
 		} else {
 			Ok((self.reader.read::<u16>()? as usize).into())
@@ -59,18 +94,26 @@ impl<'data, 'header> TableReader<'data, 'header> {
 	}
 
 	pub fn read_blob_handle(&mut self) -> io::Result<BlobHandle> {
-		if self.header.heap_sizes.contains(HeapSizeFlags::BlobBit) {
+		if self.wide_blob_handle {
 			Ok((self.reader.read::<u32>()? as usize).into())
 		} else {
 			Ok((self.reader.read::<u16>()? as usize).into())
 		}
+	}
+
+	read_coded_index! {
+		read_resolution_scope, ResolutionScope, 0b11000000_00000000,
+		0 => ModuleHandle,
+		1 => ModuleRefHandle,
+		2 => AssemblyRefHandle,
+		3 => TypeRefHandle
 	}
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
 	type Handle: Into<usize>;
 
-	fn read_row(reader: &mut TableReader<'_, '_>) -> io::Result<Self> {
+	fn read_row(_reader: &mut TableReader<'_, '_>) -> io::Result<Self> {
 		unimplemented!()
 	}
 }
@@ -123,8 +166,6 @@ impl<T: TableRow> std::ops::Index<T::Handle> for Table<T> {
 /// ECMA-335 II.24.2.6
 #[derive(Debug)]
 pub struct TablesStream {
-	pub header: TablesHeader,
-
 	pub module: Option<Table<Module>>,
 	pub type_ref: Option<Table<TypeRef>>,
 	pub type_def: Option<Table<TypeDef>>,
@@ -165,8 +206,6 @@ pub struct TablesStream {
 }
 
 use super::TableType;
-
-use binary_reader::*;
 
 use std::collections::HashMap;
 
@@ -229,11 +268,11 @@ impl<'data> TablesStream {
 		let mut reader = BinaryReader::new(data);
 
 		let header = reader.read::<TablesHeader>().ok()?;
+		let mut table_reader = TableReader::new(reader, &header);
 
 		macro_rules! try_get_table {
 			($name:ident) => {
 				header.tables.get(&TableType::$name).and_then(|&count| {
-					let mut table_reader = TableReader::new(reader, &header);
 					let mut table = Vec::with_capacity(count as usize);
 					for _ in 0..count {
 						table.push($name::read_row(&mut table_reader).ok()?);
@@ -245,12 +284,9 @@ impl<'data> TablesStream {
 			};
 		}
 
-		let module = try_get_table!(Module);
-
 		Some(TablesStream {
-			header,
-			module,
-			type_ref: None,
+			module: try_get_table!(Module),
+			type_ref: try_get_table!(TypeRef),
 			type_def: None,
 			field: None,
 			method_def: None,

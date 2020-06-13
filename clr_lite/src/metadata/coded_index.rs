@@ -1,8 +1,9 @@
 ///! ECMA-335 II.24.2.6
-use super::*;
+use crate::metadata::tables::*;
 
 macro_rules! def_coded_index {
 	($name:ident: $($type:ident),*) => {
+		#[derive(Debug)]
 		pub enum $name {
 			$($type($type)),*
 		}

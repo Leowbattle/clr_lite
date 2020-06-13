@@ -1,9 +1,8 @@
-use super::super::{GuidHandle, StringHandle};
-
+/// ECMA-335 II.22.30
 #[derive(Debug)]
 pub struct Module {
-	name: StringHandle,
-	mvid: GuidHandle,
+	pub name: StringHandle,
+	pub mvid: GuidHandle,
 }
 
 def_table!(
@@ -13,8 +12,8 @@ def_table!(
 		let _generation = reader.reader.read::<u16>()?;
 		let name = reader.read_string_handle()?;
 		let mvid = reader.read_guid_handle()?;
-		let encid = reader.read_guid_handle()?;
-		let endbaseid = reader.read_guid_handle()?;
+		let _encid = reader.read_guid_handle()?;
+		let _endbaseid = reader.read_guid_handle()?;
 
 		Ok(Module { name, mvid })
 	}

@@ -3,8 +3,6 @@ use crate::metadata;
 
 use binary_reader::*;
 
-use std::io;
-
 /// ECMA-335 II.25.3.3
 #[derive(Debug)]
 pub struct CliHeader<'pe> {
@@ -52,6 +50,6 @@ impl<'pe> CliHeader<'pe> {
 	}
 
 	pub fn metadata(&self) -> Option<metadata::Root<'pe>> {
-		crate::metadata::Root::from_pe(self.pe, self.pe.resolve_rva_slice(self.metadata).ok()?)
+		crate::metadata::Root::from_data(self.pe.resolve_rva_slice(self.metadata).ok()?)
 	}
 }

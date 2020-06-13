@@ -45,12 +45,11 @@ pub use table_types::*;
 pub mod token;
 pub use token::*;
 
-use super::pe::PeInfo;
+pub mod coded_index;
+pub use coded_index::*;
 
 /// ECMA-335 II.24.2.1
 pub struct Root<'pe> {
-	pe: &'pe PeInfo<'pe>,
-	data: &'pe [u8],
 	pub version: String,
 	pub strings_heap: Option<StringsHeap<'pe>>,
 	pub user_strings_heap: Option<UserStringsHeap<'pe>>,
@@ -84,7 +83,7 @@ struct StreamHeader<'pe> {
 }
 
 impl<'pe> Root<'pe> {
-	pub(crate) fn from_pe(pe: &'pe PeInfo, data: &'pe [u8]) -> Option<Root<'pe>> {
+	pub(crate) fn from_data(data: &'pe [u8]) -> Option<Root<'pe>> {
 		let mut reader = BinaryReader::new(data);
 
 		if reader.read::<u32>().ok()? != 0x424A5342 {
@@ -140,9 +139,7 @@ impl<'pe> Root<'pe> {
 		let tables =
 			TablesStream::new(streams.iter().find(|s| s.name == "#~").unwrap().data).unwrap();
 
-		let mut root = Root {
-			pe,
-			data,
+		let root = Root {
 			version,
 			strings_heap: Some(strings_heap),
 			user_strings_heap: Some(user_strings_heap),

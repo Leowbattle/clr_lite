@@ -1,4 +1,3 @@
-use super::HeapSizeFlags;
 use num_derive::{FromPrimitive, ToPrimitive};
 
 /// Reference: ECMA-335 §II.22
