@@ -72,3 +72,17 @@ pub struct TablesStream<'data> {
 	pub method_spec: Option<Table<MethodSpec>>,
 	pub generic_param_constraint: Option<Table<GenericParamConstraint>>,
 }
+
+use std::fmt;
+
+impl fmt::Debug for TablesStream<'_> {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		f.debug_struct("TablesStream").finish()
+	}
+}
+
+impl<'data> TablesStream<'data> {
+	pub(crate) fn new(data: &'data [u8]) -> Self {
+		unimplemented!()
+	}
+}

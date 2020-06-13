@@ -41,6 +41,22 @@ impl<'data> BinaryReader<'data> {
 		}
 		Ok(arr.into_boxed_slice())
 	}
+
+	pub fn read_string(&mut self, length: usize) -> io::Result<String> {
+		String::from_utf8(self.read_array::<u8>(length)?.into_vec())
+			.map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
+	}
+
+	pub fn read_null_terminated_string(&mut self) -> io::Result<String> {
+		let null_index = self.data[self.pos..]
+			.iter()
+			.position(|&c| c == b'\0')
+			.ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))?;
+		Ok(String::from(
+			std::str::from_utf8(&self.data[self.pos..self.pos + null_index])
+				.map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
+		))
+	}
 }
 
 impl Seek for BinaryReader<'_> {

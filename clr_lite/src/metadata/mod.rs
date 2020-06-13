@@ -37,12 +37,91 @@ pub use tables_stream::*;
 
 pub mod tables;
 
-pub struct Root<'data> {
-	data: &'data [u8],
-	pub version: &'data str,
-	pub strings_heap: Option<StringsHeap<'data>>,
-	pub user_strings_heap: Option<UserStringsHeap<'data>>,
-	pub blob_heap: Option<BlobHeap<'data>>,
-	pub guid_heap: Option<GuidHeap<'data>>,
-	pub tables: Option<TablesStream<'data>>,
+pub mod token;
+pub use token::*;
+
+use super::pe::PeInfo;
+
+/// ECMA-335 II.24.2.1
+#[derive(Debug)]
+pub struct Root<'pe> {
+	pe: &'pe PeInfo<'pe>,
+	data: &'pe [u8],
+	pub version: &'pe str,
+	pub strings_heap: Option<StringsHeap<'pe>>,
+	pub user_strings_heap: Option<UserStringsHeap<'pe>>,
+	pub blob_heap: Option<BlobHeap<'pe>>,
+	pub guid_heap: Option<GuidHeap<'pe>>,
+	pub tables: Option<TablesStream<'pe>>,
+}
+
+use binary_reader::*;
+use std::io::{self, Seek};
+
+/// ECMA-335 II.24.2.2
+#[derive(Debug)]
+struct StreamHeader<'pe> {
+	name: String,
+	data: &'pe [u8],
+}
+
+impl<'pe> Root<'pe> {
+	pub(crate) fn from_pe(pe: &'pe PeInfo, data: &'pe [u8]) -> Option<Root<'pe>> {
+		let mut reader = BinaryReader::new(data);
+
+		if reader.read::<u32>().ok()? != 0x424A5342 {
+			return None;
+		}
+
+		let _major_version = reader.read::<u16>().ok()?;
+		let _minor_version = reader.read::<u16>().ok()?;
+		let _reserved = reader.read::<u32>().ok()?;
+
+		let version_length = reader.read::<u32>().ok()? as usize;
+
+		let mut version = reader.read_string(version_length).ok()?;
+		version.truncate(version.chars().position(|c| c == '\0')?);
+
+		reader
+			.seek(io::SeekFrom::Current(
+				(version_length - version.len()) as i64,
+			))
+			.ok()?;
+
+		let number_of_streams = reader.read::<u16>().ok()? as usize;
+		let mut streams = Vec::with_capacity(number_of_streams);
+		for _ in 0..number_of_streams {
+			let offset = reader.read::<u32>().ok()? as usize;
+			let size = reader.read::<u32>().ok()? as usize;
+			let name = reader.read_null_terminated_string().ok()?;
+
+			// Skip padding to multiple of 4
+			reader
+				.seek(io::SeekFrom::Current((name.len() as i64 + 4) & !3))
+				.ok()?;
+
+			streams.push(StreamHeader {
+				name,
+				data: &data[offset..offset + size],
+			});
+		}
+
+		// ECMA-335 says "Streams need not be there if they are empty."
+		// I will deal with this problem when I find as assembly that is missing a stream.
+
+		let strings_heap =
+			StringsHeap::new(streams.iter().find(|s| s.name == "#Strings").unwrap().data);
+
+		let user_strings_heap =
+			UserStringsHeap::new(streams.iter().find(|s| s.name == "#US").unwrap().data);
+
+		let blob_heap = BlobHeap::new(streams.iter().find(|s| s.name == "#Blob").unwrap().data);
+
+		let guid_heap = GuidHeap::new(streams.iter().find(|s| s.name == "#GUID").unwrap().data);
+
+		let tables_stream =
+			TablesStream::new(streams.iter().find(|s| s.name == "#~").unwrap().data);
+
+		unimplemented!()
+	}
 }

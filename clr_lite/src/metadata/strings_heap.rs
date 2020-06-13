@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::fmt;
 
 /// ECMA-335 II.24.2.3
 pub struct StringsHeap<'data> {
@@ -7,10 +8,16 @@ pub struct StringsHeap<'data> {
 	cache: RefCell<HashMap<usize, &'data str>>,
 }
 
+impl fmt::Debug for StringsHeap<'_> {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		f.debug_struct("StringsHeap").finish()
+	}
+}
+
 def_handle!(StringHandle);
 
 impl<'data> StringsHeap<'data> {
-	pub fn new(data: &'data [u8]) -> Self {
+	pub(crate) fn new(data: &'data [u8]) -> Self {
 		Self {
 			data,
 			cache: Default::default(),

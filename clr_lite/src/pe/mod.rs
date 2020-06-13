@@ -6,6 +6,9 @@ use std::result;
 
 use binary_reader::*;
 
+pub mod cli_header;
+pub use cli_header::*;
+
 #[derive(Copy, Clone, Debug)]
 pub enum PeError {
 	NotPe,
@@ -353,5 +356,9 @@ impl<'data> PeInfo<'data> {
 	pub fn resolve_rva_slice(&self, range: RvaAndSize) -> Result<&'data [u8]> {
 		let offset = self.resolve_rva(range.rva)?;
 		Ok(&self.data[offset..offset + range.size as usize])
+	}
+
+	pub fn cli_header(&self) -> Option<CliHeader> {
+		CliHeader::from_pe(self)
 	}
 }
