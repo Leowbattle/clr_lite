@@ -3,7 +3,8 @@ mod macros {
 	#[macro_export]
 	macro_rules! def_handle {
 		($name:ident) => {
-			pub struct $name(usize);
+			#[derive(Copy, Clone, Debug)]
+			pub struct $name(pub usize);
 
 			impl Into<usize> for $name {
 				fn into(self) -> usize {
@@ -32,10 +33,14 @@ pub use blob_heap::*;
 pub mod guid_heap;
 pub use guid_heap::*;
 
+#[macro_use]
 pub mod tables_stream;
 pub use tables_stream::*;
 
 pub mod tables;
+
+pub mod table_types;
+pub use table_types::*;
 
 pub mod token;
 pub use token::*;
@@ -47,12 +52,12 @@ use super::pe::PeInfo;
 pub struct Root<'pe> {
 	pe: &'pe PeInfo<'pe>,
 	data: &'pe [u8],
-	pub version: &'pe str,
+	pub version: String,
 	pub strings_heap: Option<StringsHeap<'pe>>,
 	pub user_strings_heap: Option<UserStringsHeap<'pe>>,
 	pub blob_heap: Option<BlobHeap<'pe>>,
 	pub guid_heap: Option<GuidHeap<'pe>>,
-	pub tables: Option<TablesStream<'pe>>,
+	pub tables: Option<TablesStream>,
 }
 
 use binary_reader::*;
@@ -119,9 +124,24 @@ impl<'pe> Root<'pe> {
 
 		let guid_heap = GuidHeap::new(streams.iter().find(|s| s.name == "#GUID").unwrap().data);
 
-		let tables_stream =
-			TablesStream::new(streams.iter().find(|s| s.name == "#~").unwrap().data);
+		let mut root = Root {
+			pe,
+			data,
+			version,
+			strings_heap: Some(strings_heap),
+			user_strings_heap: Some(user_strings_heap),
+			blob_heap: Some(blob_heap),
+			guid_heap: Some(guid_heap),
+			tables: None,
+		};
 
-		unimplemented!()
+		let tables =
+			TablesStream::new(&root, streams.iter().find(|s| s.name == "#~").unwrap().data)
+				.unwrap();
+		dbg!(tables);
+		//root.tables = Some(tables);
+
+		//Some(root)
+		None
 	}
 }

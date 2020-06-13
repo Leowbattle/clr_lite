@@ -2,6 +2,7 @@ use std::io::{self, Seek};
 use std::mem;
 use std::slice;
 
+#[derive(Clone)]
 pub struct BinaryReader<'data> {
 	data: &'data [u8],
 	pos: usize,

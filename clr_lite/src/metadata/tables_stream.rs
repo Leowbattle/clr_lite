@@ -1,9 +1,90 @@
-use super::tables::*;
+#![allow(non_upper_case_globals)]
 
-pub trait TableRow {
-	type Handle: Into<usize>;
+use super::tables::*;
+use super::{BlobHandle, GuidHandle, StringHandle};
+use crate::metadata;
+
+use binary_reader::*;
+
+use std::io;
+
+pub struct TableReader<'data, 'header> {
+	pub reader: BinaryReader<'data>,
+	pub metadata: &'data metadata::Root<'data>,
+	pub header: &'header TablesHeader,
 }
 
+impl<'data, 'header> TableReader<'data, 'header> {
+	pub(crate) fn new(
+		reader: BinaryReader<'data>,
+		metadata: &'data metadata::Root<'data>,
+		header: &'header TablesHeader,
+	) -> Self {
+		Self {
+			reader,
+			metadata,
+			header,
+		}
+	}
+
+	pub fn read_handle(&mut self, table: TableType) -> io::Result<usize> {
+		// ECMA-335 II.22: "Each index is either 2 or 4 bytes wide.
+		// The index points into the same or another table, or into one of the four heaps.
+		// The size of each index column in a table is only made 4 bytes if it needs to be for that particular module.
+		// So, if a particular column indexes a table, or tables, whose highest row number fits in a 2-byte value, the indexer column need only be 2 bytes wide.
+		// Conversely, for tables containing 64K or more rows, an indexer of that table will be 4 bytes wide."
+
+		let size = self
+			.header
+			.tables
+			.get(&table)
+			.map(|&count| match count {
+				c if c > 65535 => 4,
+				_ => 2,
+			})
+			.ok_or(io::Error::from(io::ErrorKind::InvalidData))?;
+
+		match size {
+			4 => Ok(self.reader.read::<u32>()? as usize),
+			2 => Ok(self.reader.read::<u16>()? as usize),
+			_ => unreachable!(),
+		}
+	}
+
+	pub fn read_string_handle(&mut self) -> io::Result<StringHandle> {
+		if self.header.heap_sizes.contains(HeapSizeFlags::StringBit) {
+			Ok((self.reader.read::<u32>()? as usize).into())
+		} else {
+			Ok((self.reader.read::<u16>()? as usize).into())
+		}
+	}
+
+	pub fn read_guid_handle(&mut self) -> io::Result<GuidHandle> {
+		if self.header.heap_sizes.contains(HeapSizeFlags::GuidBit) {
+			Ok((self.reader.read::<u32>()? as usize).into())
+		} else {
+			Ok((self.reader.read::<u16>()? as usize).into())
+		}
+	}
+
+	pub fn read_blob_handle(&mut self) -> io::Result<BlobHandle> {
+		if self.header.heap_sizes.contains(HeapSizeFlags::BlobBit) {
+			Ok((self.reader.read::<u32>()? as usize).into())
+		} else {
+			Ok((self.reader.read::<u16>()? as usize).into())
+		}
+	}
+}
+
+pub trait TableRow: Sized + std::fmt::Debug {
+	type Handle: Into<usize>;
+
+	fn read_row(reader: &mut TableReader<'_, '_>) -> io::Result<Self> {
+		unimplemented!()
+	}
+}
+
+#[derive(Debug)]
 pub struct Table<T: TableRow> {
 	rows: Box<[T]>,
 }
@@ -19,6 +100,24 @@ mod macros {
 				type Handle = $handle_name;
 			}
 		};
+
+		($row:ty, $handle_name:ident,$read:item) => {
+			def_handle!($handle_name);
+
+			use crate::metadata::*;
+
+			impl crate::metadata::tables_stream::TableRow for $row {
+				type Handle = $handle_name;
+
+				$read
+			}
+		};
+	}
+}
+
+impl<T: TableRow> Table<T> {
+	pub fn rows(&self) -> &Box<[T]> {
+		&self.rows
 	}
 }
 
@@ -31,8 +130,9 @@ impl<T: TableRow> std::ops::Index<T::Handle> for Table<T> {
 }
 
 /// ECMA-335 II.24.2.6
-pub struct TablesStream<'data> {
-	data: &'data [u8],
+#[derive(Debug)]
+pub struct TablesStream {
+	pub header: TablesHeader,
 
 	pub module: Option<Table<Module>>,
 	pub type_ref: Option<Table<TypeRef>>,
@@ -73,16 +173,135 @@ pub struct TablesStream<'data> {
 	pub generic_param_constraint: Option<Table<GenericParamConstraint>>,
 }
 
-use std::fmt;
+use super::TableType;
 
-impl fmt::Debug for TablesStream<'_> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		f.debug_struct("TablesStream").finish()
+use binary_reader::*;
+
+use std::collections::HashMap;
+
+#[derive(Debug)]
+pub struct TablesHeader {
+	pub major_version: u8,
+	pub minor_version: u8,
+	pub heap_sizes: HeapSizeFlags,
+	pub tables: HashMap<TableType, u32>,
+	pub sorted: u64,
+}
+
+impl BinaryReadable for TablesHeader {
+	fn read(reader: &mut BinaryReader<'_>) -> io::Result<Self> {
+		let _reserved = reader.read::<u32>()?;
+		let major_version = reader.read::<u8>()?;
+		let minor_version = reader.read::<u8>()?;
+		let heap_sizes = HeapSizeFlags::from_bits(reader.read::<u8>()?)
+			.ok_or(io::Error::from(io::Error::from(io::ErrorKind::InvalidData)))?;
+
+		let _reserved2 = reader.read::<u8>()?;
+
+		let present_tables = reader.read::<u64>()?;
+
+		let sorted = reader.read::<u64>()?;
+
+		let mut tables = HashMap::new();
+		for t in TableType::values() {
+			if 1 & (present_tables >> t as u64) == 1 {
+				let row_count = reader.read::<u32>()?;
+				tables.insert(t, row_count);
+			}
+		}
+
+		Ok(TablesHeader {
+			major_version,
+			minor_version,
+			heap_sizes,
+			tables,
+			sorted,
+		})
 	}
 }
 
-impl<'data> TablesStream<'data> {
-	pub(crate) fn new(data: &'data [u8]) -> Self {
-		unimplemented!()
+pub struct RawTable<'data> {
+	pub data: &'data [u8],
+	pub row_count: usize,
+}
+
+bitflags! {
+	pub struct HeapSizeFlags: u8 {
+		const StringBit = 1;
+		const GuidBit = 2;
+		const BlobBit = 4;
+	}
+}
+
+impl<'data> TablesStream {
+	pub(crate) fn new(
+		metadata: &'data metadata::Root<'data>,
+		data: &'data [u8],
+	) -> Option<TablesStream> {
+		let mut reader = BinaryReader::new(data);
+
+		let header = reader.read::<TablesHeader>().ok()?;
+		dbg!(&header);
+
+		macro_rules! try_get_table {
+			($name:ident) => {{
+				match header.tables.get(&TableType::$name) {
+					Some(&count) => {
+						let mut table_reader = TableReader::new(reader, metadata, &header);
+						let mut table = Vec::with_capacity(count as usize);
+						for _ in 0..count {
+							table.push($name::read_row(&mut table_reader).ok()?);
+						}
+						Some(Table {
+							rows: table.into_boxed_slice(),
+						})
+						}
+					None => None,
+					}
+				}};
+		}
+
+		let module = try_get_table!(Module);
+
+		Some(TablesStream {
+			header,
+			module,
+			type_ref: None,
+			type_def: None,
+			field: None,
+			method_def: None,
+			param: None,
+			interface_impl: None,
+			member_ref: None,
+			constant: None,
+			custom_attribute: None,
+			field_marshal: None,
+			decl_securitie: None,
+			class_layout: None,
+			field_layout: None,
+			standalone_sig: None,
+			event_map: None,
+			event: None,
+			property_map: None,
+			property: None,
+			method_semantic: None,
+			method_impl: None,
+			module_ref: None,
+			type_spec: None,
+			impl_map: None,
+			field_rva: None,
+			assembly: None,
+			assembly_os: None,
+			assembly_ref: None,
+			assembly_ref_processor: None,
+			assembly_ref_os: None,
+			file: None,
+			exported_type: None,
+			manifest_resource: None,
+			nested_class: None,
+			generic_param: None,
+			method_spec: None,
+			generic_param_constraint: None,
+		})
 	}
 }
