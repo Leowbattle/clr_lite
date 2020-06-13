@@ -48,7 +48,6 @@ pub use token::*;
 use super::pe::PeInfo;
 
 /// ECMA-335 II.24.2.1
-#[derive(Debug)]
 pub struct Root<'pe> {
 	pe: &'pe PeInfo<'pe>,
 	data: &'pe [u8],
@@ -60,11 +59,25 @@ pub struct Root<'pe> {
 	pub tables: Option<TablesStream>,
 }
 
+use std::fmt;
+
+impl fmt::Debug for Root<'_> {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		f.debug_struct("Root")
+			.field("version", &self.version)
+			.field("strings_heap", &self.strings_heap)
+			.field("user_strings_heap", &self.user_strings_heap)
+			.field("blob_heap", &self.blob_heap)
+			.field("guid_heap", &self.guid_heap)
+			.field("tables", &self.tables)
+			.finish()
+	}
+}
+
 use binary_reader::*;
 use std::io::{self, Seek};
 
 /// ECMA-335 II.24.2.2
-#[derive(Debug)]
 struct StreamHeader<'pe> {
 	name: String,
 	data: &'pe [u8],
@@ -124,6 +137,9 @@ impl<'pe> Root<'pe> {
 
 		let guid_heap = GuidHeap::new(streams.iter().find(|s| s.name == "#GUID").unwrap().data);
 
+		let tables =
+			TablesStream::new(streams.iter().find(|s| s.name == "#~").unwrap().data).unwrap();
+
 		let mut root = Root {
 			pe,
 			data,
@@ -132,16 +148,9 @@ impl<'pe> Root<'pe> {
 			user_strings_heap: Some(user_strings_heap),
 			blob_heap: Some(blob_heap),
 			guid_heap: Some(guid_heap),
-			tables: None,
+			tables: Some(tables),
 		};
 
-		let tables =
-			TablesStream::new(&root, streams.iter().find(|s| s.name == "#~").unwrap().data)
-				.unwrap();
-		dbg!(tables);
-		//root.tables = Some(tables);
-
-		//Some(root)
-		None
+		Some(root)
 	}
 }

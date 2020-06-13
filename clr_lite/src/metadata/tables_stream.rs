@@ -10,21 +10,12 @@ use std::io;
 
 pub struct TableReader<'data, 'header> {
 	pub reader: BinaryReader<'data>,
-	pub metadata: &'data metadata::Root<'data>,
 	pub header: &'header TablesHeader,
 }
 
 impl<'data, 'header> TableReader<'data, 'header> {
-	pub(crate) fn new(
-		reader: BinaryReader<'data>,
-		metadata: &'data metadata::Root<'data>,
-		header: &'header TablesHeader,
-	) -> Self {
-		Self {
-			reader,
-			metadata,
-			header,
-		}
+	pub(crate) fn new(reader: BinaryReader<'data>, header: &'header TablesHeader) -> Self {
+		Self { reader, header }
 	}
 
 	pub fn read_handle(&mut self, table: TableType) -> io::Result<usize> {
@@ -234,31 +225,24 @@ bitflags! {
 }
 
 impl<'data> TablesStream {
-	pub(crate) fn new(
-		metadata: &'data metadata::Root<'data>,
-		data: &'data [u8],
-	) -> Option<TablesStream> {
+	pub(crate) fn new(data: &'data [u8]) -> Option<TablesStream> {
 		let mut reader = BinaryReader::new(data);
 
 		let header = reader.read::<TablesHeader>().ok()?;
-		dbg!(&header);
 
 		macro_rules! try_get_table {
-			($name:ident) => {{
-				match header.tables.get(&TableType::$name) {
-					Some(&count) => {
-						let mut table_reader = TableReader::new(reader, metadata, &header);
-						let mut table = Vec::with_capacity(count as usize);
-						for _ in 0..count {
-							table.push($name::read_row(&mut table_reader).ok()?);
+			($name:ident) => {
+				header.tables.get(&TableType::$name).and_then(|&count| {
+					let mut table_reader = TableReader::new(reader, &header);
+					let mut table = Vec::with_capacity(count as usize);
+					for _ in 0..count {
+						table.push($name::read_row(&mut table_reader).ok()?);
 						}
-						Some(Table {
-							rows: table.into_boxed_slice(),
+					Some(Table {
+						rows: table.into_boxed_slice(),
 						})
-						}
-					None => None,
-					}
-				}};
+					})
+			};
 		}
 
 		let module = try_get_table!(Module);
