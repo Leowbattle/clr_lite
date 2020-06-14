@@ -37,6 +37,7 @@ pub use guid_heap::*;
 pub mod tables_stream;
 pub use tables_stream::*;
 
+pub mod signatures;
 pub mod tables;
 
 pub mod table_types;
