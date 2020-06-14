@@ -2,42 +2,43 @@ use clr_lite::pe::*;
 
 fn main() {
 	let data = include_bytes!(
-		"../../tests/metadata/tables/TypeRefTests/bin/Debug/netcoreapp3.1/TypeRefTests.dll"
+		"../../tests/metadata/tables/FieldTests/bin/Debug/netcoreapp3.1/FieldTests.dll"
 	);
 
 	let pe = PeInfo::parse(data).unwrap();
 	let cli_header = pe.cli_header();
 	let metadata = cli_header.and_then(|c| c.metadata()).unwrap();
-	//dbg!(&metadata);
 
-	// let strings = metadata.strings_heap;
-	// let types = metadata.tables.type_def.unwrap();
+	let type_defs = metadata.tables.type_def.as_ref().unwrap();
+	let fields = metadata.tables.field.as_ref().unwrap();
 
-	// let types = types
-	// 	.rows()
-	// 	.iter()
-	// 	.map(|row| (strings.get(row.type_name).unwrap(), row))
-	// 	.collect::<std::collections::HashMap<&str, &clr_lite::metadata::tables::TypeDef>>();
-
-	// dbg!(types);
-
-	for td in metadata.tables.type_def.as_ref().unwrap().rows().iter() {
+	// Print all defined types and their fields
+	for (i, td) in type_defs.rows().iter().enumerate() {
 		let name = metadata.strings_heap.get(td.type_name).unwrap();
 		let namespace = metadata.strings_heap.get(td.type_namespace).unwrap();
 		let extends = match td.extends {
 			clr_lite::metadata::TypeDefOrRef::TypeRefHandle(t) => metadata
 				.strings_heap
 				.get(metadata.tables.type_ref.as_ref().unwrap()[t].type_name),
-			clr_lite::metadata::TypeDefOrRef::TypeDefHandle(t) => metadata
-				.tables
-				.type_def
-				.as_ref()
-				.unwrap()
+			clr_lite::metadata::TypeDefOrRef::TypeDefHandle(t) => type_defs
 				.get(t)
 				.map(|t| t.type_name)
 				.and_then(|n| metadata.strings_heap.get(n)),
 			_ => None,
 		};
-		println!("{}.{} : {:?}", namespace, name, extends);
+		println!(": {}.{} : {:?}", namespace, name, extends);
+
+		let field_end = if i == type_defs.rows().len() - 1 {
+			fields.rows().len() + 1
+		} else {
+			type_defs.rows()[i + 1].field_list.0
+		};
+
+		for i in td.field_list.0..field_end {
+			let name = metadata.strings_heap.get(fields[i.into()].name).unwrap();
+			println!("\t: {}", name);
+		}
+
+		println!("");
 	}
 }

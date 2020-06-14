@@ -1,5 +1,5 @@
 /// ECMA-335 II.22.38
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct TypeRef {
 	pub resolution_scope: ResolutionScope,
 	pub type_name: StringHandle,

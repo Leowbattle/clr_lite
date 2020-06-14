@@ -1,3 +1,5 @@
+#![allow(non_upper_case_globals)]
+
 /// ECMA-335 II.22.37
 #[derive(Debug, PartialEq, Eq)]
 pub struct TypeDef {
@@ -9,129 +11,54 @@ pub struct TypeDef {
 	pub method_list: MethodDefHandle,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct TypeAttributes {
-	pub visibility: TypeVisibility,
-	pub layout: TypeLayout,
-	pub semantics: TypeSemantics,
-	pub r#abstract: bool,
-	pub sealed: bool,
-	pub special_name: bool,
-	pub imported: bool,
-	pub serialisable: bool,
-	pub string_format: TypeStringFormat,
-	pub before_field_init: bool,
-	pub rt_special_name: bool,
-	pub has_security: bool,
-	pub is_type_forwarder: bool,
-}
+bitflags! {
+	pub struct TypeAttributes: u32 {
+		const VisibilityMask = 0x7;
+		const NonPublic = 0x0;
+		const Public = 0x1;
+		const NestedPublic = 0x2;
+		const NestedPrivate = 0x3;
+		const NestedProtected = 0x4;
+		const NestedInternal = 0x5;
+		const NestedPrivateProtected = 0x6;
+		const NestedProtectedInternal = 0x7;
 
-impl BinaryReadable for TypeAttributes {
-	fn read(reader: &mut BinaryReader<'_>) -> io::Result<Self> {
-		let flags = reader.read::<u32>()?;
+		const LayoutMask = 0x18;
+		const AutoLayout = 0x0;
+		const SequentialLayout = 0x8;
+		const ExplicitLayout = 0x10;
 
-		let visibility = match flags & 0x7 {
-			0x0 => TypeVisibility::NonPublic,
-			0x1 => TypeVisibility::Public,
-			0x2 => TypeVisibility::NestedPublic,
-			0x3 => TypeVisibility::NestedPrivate,
-			0x4 => TypeVisibility::NestedFamily,
-			0x5 => TypeVisibility::NestedAssembly,
-			0x6 => TypeVisibility::NestedFamAndAsm,
-			0x7 => TypeVisibility::NestedFamOrAsm,
-			_ => return Err(io::Error::from(io::ErrorKind::InvalidData)),
-		};
+		const SemanticsMask = 0x20;
+		const Class = 0x0;
+		const Interface = 0x20;
 
-		let layout = match flags & 0x18 {
-			0x0 => TypeLayout::AutoLayout,
-			0x8 => TypeLayout::SequentialLayout,
-			0x10 => TypeLayout::ExplicitLayout,
-			_ => return Err(io::Error::from(io::ErrorKind::InvalidData)),
-		};
+		const Abstract = 0x80;
+		const Sealed = 0x100;
+		const SpecialName = 0x400;
 
-		let semantics = match flags & 0x20 {
-			0x0 => TypeSemantics::Class,
-			0x20 => TypeSemantics::Interface,
-			_ => return Err(io::Error::from(io::ErrorKind::InvalidData)),
-		};
+		const Imported = 0x1000;
+		const Serialisable = 0x2000;
 
-		let r#abstract = flags & 0x80 != 0;
-		let sealed = flags & 0x100 != 0;
-		let special_name = flags & 0x400 != 0;
+		const StringFormatMask = 0x30000;
+		const Ansi = 0x0;
+		const Unicode = 0x10000;
+		const Auto = 0x20000;
+		const Custom = 0x30000;
 
-		let imported = flags & 0x1000 != 0;
-		let serialisable = flags & 0x2000 != 0;
+		const BeforeFieldInit = 0x100000;
 
-		let string_format = match flags & 0x30000 {
-			0x0 => TypeStringFormat::Ansi,
-			0x10000 => TypeStringFormat::Unicode,
-			0x20000 => TypeStringFormat::Auto,
-			0x30000 => TypeStringFormat::Custom,
-			_ => return Err(io::Error::from(io::ErrorKind::InvalidData)),
-		};
-
-		let before_field_init = flags & 0x100000 != 0;
-
-		let rt_special_name = flags & 0x800 != 0;
-		let has_security = flags & 0x40000 != 0;
-		let is_type_forwarder = flags & 0x200000 != 0;
-
-		Ok(TypeAttributes {
-			visibility,
-			layout,
-			semantics,
-			r#abstract,
-			sealed,
-			special_name,
-			imported,
-			serialisable,
-			string_format,
-			before_field_init,
-			rt_special_name,
-			has_security,
-			is_type_forwarder,
-		})
+		const RtSpecialName = 0x800;
+		const HasSecurity = 0x40000;
+		const IsTypeForwarder = 0x200000;
 	}
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum TypeVisibility {
-	NonPublic,
-	Public,
-	NestedPublic,
-	NestedPrivate,
-	NestedFamily,
-	NestedAssembly,
-	NestedFamAndAsm,
-	NestedFamOrAsm,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum TypeLayout {
-	AutoLayout,
-	SequentialLayout,
-	ExplicitLayout,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum TypeSemantics {
-	Class,
-	Interface,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum TypeStringFormat {
-	Ansi,
-	Unicode,
-	Auto,
-	Custom,
 }
 
 crate::def_table!(
 	TypeDef,
 	TypeDefHandle,
 	fn read_row(reader: &mut TableReader<'_, '_>) -> io::Result<TypeDef> {
-		let flags = reader.reader.read::<TypeAttributes>()?;
+		let flags = TypeAttributes::from_bits(reader.reader.read::<u32>()?)
+			.ok_or(io::Error::from(io::ErrorKind::InvalidData))?;
 
 		let type_name = reader.read_string_handle()?;
 		let type_namespace = reader.read_string_handle()?;
@@ -161,7 +88,7 @@ mod tests {
 	#[test]
 	fn test_type_def() {
 		let data = include_bytes!(
-			"../../../../tests/metadata/tables/TypeRefTests/bin/Debug/netcoreapp3.1/TypeRefTests.dll"
+			"../../../../tests/metadata/tables/TypeDefTests/bin/Debug/netcoreapp3.1/TypeDefTests.dll"
 		);
 		let pe = PeInfo::parse(data).unwrap();
 		let cli_header = pe.cli_header();
@@ -207,10 +134,14 @@ mod tests {
 			.collect::<HashMap<&str, TypeInfo>>();
 
 		let module = types.get("<Module>").unwrap();
-		assert_eq!(module.row.flags.visibility, TypeVisibility::NonPublic);
+		assert!(
+			(module.row.flags & TypeAttributes::VisibilityMask).contains(TypeAttributes::NonPublic)
+		);
 
 		let class1 = types.get("Class1").unwrap();
-		assert_eq!(class1.row.flags.visibility, TypeVisibility::Public);
+		assert!(
+			(class1.row.flags & TypeAttributes::VisibilityMask).contains(TypeAttributes::Public)
+		);
 		assert_eq!(class1.field_count, 3); // Class1 has 3 fields: x, y, and z.
 		assert_eq!(class1.method_count, 2); // Class1 has 2 methods: .ctor and Doit
 
@@ -240,14 +171,15 @@ mod tests {
 		); // class ExtendsExternalType : Exception { }
 
 		let sealed = types.get("SealedClass").unwrap();
-		assert_eq!(sealed.row.flags.sealed, true);
+		assert!(sealed.row.flags.contains(TypeAttributes::Sealed));
 
 		let r#abstract = types.get("AbstractClass").unwrap();
-		assert_eq!(r#abstract.row.flags.r#abstract, true);
+		assert!(r#abstract.row.flags.contains(TypeAttributes::Abstract));
 
 		let interface = types.get("Interface").unwrap();
-		assert_eq!(interface.row.flags.semantics, TypeSemantics::Interface);
-		assert_eq!(interface.row.flags.r#abstract, true);
+		assert!((interface.row.flags & TypeAttributes::SemanticsMask)
+			.contains(TypeAttributes::Interface));
+		assert!(interface.row.flags.contains(TypeAttributes::Abstract));
 
 		let r#struct = types.get("Struct").unwrap();
 		assert_eq!(
@@ -267,24 +199,32 @@ mod tests {
 		);
 
 		let explicit_layout = types.get("ExplicitLayoutStruct").unwrap();
-		assert_eq!(explicit_layout.row.flags.layout, TypeLayout::ExplicitLayout);
+		assert!((explicit_layout.row.flags & TypeAttributes::LayoutMask)
+			.contains(TypeAttributes::ExplicitLayout));
 
 		let special_name = types.get("SpecialName").unwrap();
-		assert_eq!(special_name.row.flags.special_name, true);
+		assert!(special_name.row.flags.contains(TypeAttributes::SpecialName));
 
 		let serialisable_class = types.get("SerialisableClass").unwrap();
-		assert_eq!(serialisable_class.row.flags.serialisable, true);
+		assert!(serialisable_class
+			.row
+			.flags
+			.contains(TypeAttributes::Serialisable));
 
 		let unicode_struct = types.get("UnicodeStruct").unwrap();
-		assert_eq!(
-			unicode_struct.row.flags.string_format,
-			TypeStringFormat::Unicode
+		assert!(
+			(unicode_struct.row.flags & TypeAttributes::StringFormatMask)
+				.contains(TypeAttributes::Unicode)
 		);
 
 		let auto_struct = types.get("AutoStruct").unwrap();
-		assert_eq!(auto_struct.row.flags.string_format, TypeStringFormat::Auto);
+		assert!((auto_struct.row.flags & TypeAttributes::StringFormatMask)
+			.contains(TypeAttributes::Auto));
 
 		let has_static_constructor = types.get("HasStaticConstructor").unwrap();
-		assert_eq!(has_static_constructor.row.flags.before_field_init, false);
+		assert!(!has_static_constructor
+			.row
+			.flags
+			.contains(TypeAttributes::BeforeFieldInit));
 	}
 }

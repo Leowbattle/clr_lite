@@ -455,7 +455,7 @@ impl<'data> TablesStream {
 			module: try_get_table!(Module),
 			type_ref: try_get_table!(TypeRef),
 			type_def: try_get_table!(TypeDef),
-			field: None,
+			field: try_get_table!(Field),
 			method_def: None,
 			param: None,
 			interface_impl: None,
