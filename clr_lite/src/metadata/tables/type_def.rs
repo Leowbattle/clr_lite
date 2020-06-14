@@ -12,6 +12,7 @@ pub struct TypeDef {
 }
 
 bitflags! {
+	/// Note: The fmt::Debug implementation is wrong, but there is no way to override it
 	pub struct TypeAttributes: u32 {
 		const VisibilityMask = 0x7;
 		const NonPublic = 0x0;
@@ -96,6 +97,7 @@ mod tests {
 
 		let strings = metadata.strings_heap;
 		let types = metadata.tables.type_def.as_ref().unwrap();
+		let fields = metadata.tables.field.as_ref().unwrap();
 
 		#[derive(Debug)]
 		struct TypeInfo<'a> {
@@ -116,9 +118,10 @@ mod tests {
 						i,
 						row,
 						// The field count is the field index of the next type - the field index of this type, or the number of fields - the field index of this type if this type is the last one.
-						field_count: if i == types.rows().len() - 1 {
-							// TODO Implement field table
+						field_count: if row.field_list.0 == fields.rows().len() + 1 {
 							0
+						} else if i == types.rows().len() - 1 {
+							fields.rows().len() - row.field_list.0
 						} else {
 							types.rows()[i + 1].field_list.0 - row.field_list.0
 						},

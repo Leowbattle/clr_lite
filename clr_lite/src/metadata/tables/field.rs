@@ -9,6 +9,7 @@ pub struct Field {
 }
 
 bitflags! {
+	/// Note: The fmt::Debug implementation is wrong, but there is no way to override it
 	pub struct FieldAttributes: u16 {
 		const VisibilityMask = 0x7;
 		const CompilerControlled = 0x0;
@@ -50,3 +51,80 @@ crate::def_table!(
 		})
 	}
 );
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::pe::*;
+
+	use std::collections::HashMap;
+
+	#[test]
+	fn test_field() {
+		let data = include_bytes!(
+			"../../../../tests/metadata/tables/FieldTests/bin/Debug/netcoreapp3.1/FieldTests.dll"
+		);
+		let pe = PeInfo::parse(data).unwrap();
+		let cli_header = pe.cli_header();
+		let metadata = cli_header.and_then(|c| c.metadata()).unwrap();
+
+		let strings = metadata.strings_heap;
+		let types = metadata.tables.type_def.as_ref().unwrap();
+		let fields = metadata.tables.field.as_ref().unwrap();
+
+		#[derive(Debug)]
+		struct TypeInfo<'a> {
+			i: usize,
+			row: &'a TypeDef,
+			field_count: usize,
+		}
+
+		let types = types
+			.rows()
+			.iter()
+			.enumerate()
+			.map(|(i, row)| {
+				(
+					strings.get(row.type_name).unwrap(),
+					TypeInfo {
+						i,
+						row,
+						field_count: if row.field_list.0 == fields.rows().len() + 1 {
+							0
+						} else if i == types.rows().len() - 1 {
+							fields.rows().len() - row.field_list.0
+						} else {
+							types.rows()[i + 1].field_list.0 - row.field_list.0
+						},
+					},
+				)
+			})
+			.collect::<HashMap<&str, TypeInfo>>();
+
+		let fields = fields
+			.rows()
+			.iter()
+			.map(|f| (strings.get(f.name.into()).unwrap(), f))
+			.collect::<HashMap<&str, &Field>>();
+
+		let class1 = types.get("Class1").unwrap();
+		assert_eq!(class1.field_count, 7);
+
+		let class2 = types.get("Class2").unwrap();
+		assert_eq!(class2.field_count, 0);
+
+		let fruit = types.get("Fruit").unwrap();
+		assert_eq!(fruit.field_count, 5); // 4 variants + value__
+
+		let my_static = fields.get("MyStatic").unwrap();
+		assert!(my_static.flags.contains(FieldAttributes::Static));
+
+		let my_readonly = fields.get("MyReadonly").unwrap();
+		assert!(my_readonly.flags.contains(FieldAttributes::InitOnly));
+
+		let my_const = fields.get("MyConst").unwrap();
+		assert!(my_const.flags.contains(
+			FieldAttributes::Static | FieldAttributes::Literal | FieldAttributes::HasDefault
+		));
+	}
+}
