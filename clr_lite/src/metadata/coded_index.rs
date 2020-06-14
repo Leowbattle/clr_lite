@@ -3,7 +3,7 @@ use crate::metadata::tables::*;
 
 macro_rules! def_coded_index {
 	($name:ident: $($type:ident),*) => {
-		#[derive(Debug)]
+		#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 		pub enum $name {
 			$($type($type)),*
 		}
@@ -38,7 +38,11 @@ def_coded_index!(
 );
 
 def_coded_index!(HasFieldMarshall: FieldHandle, ParamHandle);
-def_coded_index!(HasDeclSecurity: TypeDefHandle, MethodDefHandle, AssemblyRef);
+def_coded_index!(
+	HasDeclSecurity: TypeDefHandle,
+	MethodDefHandle,
+	AssemblyHandle
+);
 def_coded_index!(
 	MemberRefParent: TypeDefHandle,
 	TypeRefHandle,

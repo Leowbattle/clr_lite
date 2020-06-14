@@ -12,9 +12,28 @@ pub struct TableReader<'data, 'header> {
 	pub reader: BinaryReader<'data>,
 	pub header: &'header TablesHeader,
 
+	wide_handles: HashMap<TableType, bool>,
+
 	wide_string_handle: bool,
 	wide_guid_handle: bool,
 	wide_blob_handle: bool,
+}
+
+macro_rules! read_handle {
+	($name:ident, $type:ty) => {
+		pub fn $name(&mut self) -> io::Result<<$type as TableRow>::Handle> {
+			// ECMA-335 II.22: "Each index is either 2 or 4 bytes wide.
+			// The index points into the same or another table, or into one of the four heaps.
+			// The size of each index column in a table is only made 4 bytes if it needs to be for that particular module.
+			// So, if a particular column indexes a table, or tables, whose highest row number fits in a 2-byte value, the indexer column need only be 2 bytes wide.
+			// Conversely, for tables containing 64K or more rows, an indexer of that table will be 4 bytes wide."
+
+			match self.wide_handles.get(&<$type>::TYPE) {
+				Some(true) => Ok((self.reader.read::<u32>()? as usize).into()),
+				_ => Ok((self.reader.read::<u16>()? as usize).into()),
+			}
+		}
+	};
 }
 
 macro_rules! read_coded_index {
@@ -22,7 +41,8 @@ macro_rules! read_coded_index {
 		pub fn $name(&mut self) -> io::Result<$type> {
 			let data = self.reader.read::<u16>()?;
 			let tag = data & $tag_bitmask;
-			let index = (data & !$tag_bitmask) as usize;
+			let index = ((data & !$tag_bitmask) >> ($tag_bitmask as u16).count_ones()) as usize;
+
 			match tag {
 				$($tag_value => Ok(<$type>::$tag_type(index.into()))),*,
 				_ => Err(io::Error::from(io::ErrorKind::InvalidData)),
@@ -33,13 +53,13 @@ macro_rules! read_coded_index {
 
 impl<'data, 'header> TableReader<'data, 'header> {
 	pub(crate) fn new(reader: BinaryReader<'data>, header: &'header TablesHeader) -> Self {
-		// let wide_handles = header
-		// 	.tables
-		// 	.iter()
-		// 	.map(|(&k, &v)| (k, v > 65535))
-		// 	.collect();
+		let wide_handles = header
+			.tables
+			.iter()
+			.map(|(&k, &v)| (k, v > 65535))
+			.collect();
 
-		if header.tables.iter().any(|(&k, &v)| v > 65535) {
+		if header.tables.iter().any(|(&_k, &v)| v > 65535) {
 			panic!("Please implement 4 byte table indices");
 		}
 
@@ -47,35 +67,40 @@ impl<'data, 'header> TableReader<'data, 'header> {
 			reader,
 			header,
 
+			wide_handles,
+
 			wide_string_handle: header.heap_sizes.contains(HeapSizeFlags::StringBit),
 			wide_guid_handle: header.heap_sizes.contains(HeapSizeFlags::GuidBit),
 			wide_blob_handle: header.heap_sizes.contains(HeapSizeFlags::BlobBit),
 		}
 	}
 
-	pub fn read_handle(&mut self, table: TableType) -> io::Result<usize> {
-		// ECMA-335 II.22: "Each index is either 2 or 4 bytes wide.
-		// The index points into the same or another table, or into one of the four heaps.
-		// The size of each index column in a table is only made 4 bytes if it needs to be for that particular module.
-		// So, if a particular column indexes a table, or tables, whose highest row number fits in a 2-byte value, the indexer column need only be 2 bytes wide.
-		// Conversely, for tables containing 64K or more rows, an indexer of that table will be 4 bytes wide."
+	// pub fn read_handle(&mut self, table: TableType) -> io::Result<usize> {
+	// 	// ECMA-335 II.22: "Each index is either 2 or 4 bytes wide.
+	// 	// The index points into the same or another table, or into one of the four heaps.
+	// 	// The size of each index column in a table is only made 4 bytes if it needs to be for that particular module.
+	// 	// So, if a particular column indexes a table, or tables, whose highest row number fits in a 2-byte value, the indexer column need only be 2 bytes wide.
+	// 	// Conversely, for tables containing 64K or more rows, an indexer of that table will be 4 bytes wide."
 
-		let size = self
-			.header
-			.tables
-			.get(&table)
-			.map(|&count| match count {
-				c if c > 65535 => 4,
-				_ => 2,
-			})
-			.ok_or(io::Error::from(io::ErrorKind::InvalidData))?;
+	// 	let size = self
+	// 		.header
+	// 		.tables
+	// 		.get(&table)
+	// 		.map(|&count| match count {
+	// 			c if c > 65535 => 4,
+	// 			_ => 2,
+	// 		})
+	// 		.ok_or(io::Error::from(io::ErrorKind::InvalidData))?;
 
-		match size {
-			4 => Ok(self.reader.read::<u32>()? as usize),
-			2 => Ok(self.reader.read::<u16>()? as usize),
-			_ => unreachable!(),
-		}
-	}
+	// 	match size {
+	// 		4 => Ok(self.reader.read::<u32>()? as usize),
+	// 		2 => Ok(self.reader.read::<u16>()? as usize),
+	// 		_ => unreachable!(),
+	// 	}
+	// }
+
+	read_handle!(read_field_handle, Field);
+	read_handle!(read_method_def_handle, MethodDef);
 
 	pub fn read_string_handle(&mut self) -> io::Result<StringHandle> {
 		if self.wide_string_handle {
@@ -102,16 +127,142 @@ impl<'data, 'header> TableReader<'data, 'header> {
 	}
 
 	read_coded_index! {
-		read_resolution_scope, ResolutionScope, 0b11000000_00000000,
+		read_type_def_or_ref,
+		TypeDefOrRef,
+		0b11,
+		0 => TypeDefHandle,
+		1 => TypeRefHandle,
+		2 => TypeSpecHandle
+	}
+
+	read_coded_index! {
+		read_has_constant,
+		HasConstant,
+		0b11,
+		0 => FieldHandle,
+		1 => ParamHandle,
+		2 => PropertyHandle
+	}
+
+	read_coded_index! {
+		read_has_custom_attribute,
+		HasCustomAttribute,
+		0b11111,
+		0 => MethodDefHandle,
+		1 => FieldHandle,
+		2 => TypeRefHandle,
+		3 => TypeDefHandle,
+		4 => ParamHandle,
+		5 => InterfaceImplHandle,
+		6 => MemberRefHandle,
+		7 => ModuleHandle,
+		// 8 => PermissionHandle,
+		9 => PropertyHandle,
+		10 => EventHandle,
+		11 => StandaloneSigHandle,
+		12 => ModuleRefHandle,
+		13 => TypeSpecHandle,
+		14 => AssemblyHandle,
+		15 => AssemblyRefHandle,
+		16 => FileHandle,
+		17 => ExportedTypeHandle,
+		18 => ManifestResourceHandle,
+		19 => GenericParamHandle,
+		20 => GenericParamConstraintHandle,
+		21 => MethodSpecHandle
+	}
+
+	read_coded_index! {
+		read_has_field_marshall,
+		HasFieldMarshall,
+		0b1,
+		0 => FieldHandle,
+		1 => ParamHandle
+	}
+
+	read_coded_index! {
+		read_has_decl_security,
+		HasDeclSecurity,
+		0b11,
+		0 => TypeDefHandle,
+		1 => MethodDefHandle,
+		2 => AssemblyHandle
+	}
+
+	read_coded_index! {
+		read_member_ref_parent,
+		MemberRefParent,
+		0b111,
+		0 => TypeDefHandle,
+		1 => TypeRefHandle,
+		2 => ModuleRefHandle,
+		3 => MethodDefHandle,
+		4 => TypeSpecHandle
+	}
+
+	read_coded_index! {
+		read_has_semantics,
+		HasSemantics,
+		0b1,
+		0 => EventHandle,
+		1 => PropertyHandle
+	}
+
+	read_coded_index! {
+		read_method_def_or_ref,
+		MethodDefOrRef,
+		0b1,
+		0 => MethodDefHandle,
+		1 => MemberRefHandle
+	}
+
+	read_coded_index! {
+		read_member_forwarded,
+		MemberForwarded,
+		0b1,
+		0 => FieldHandle,
+		1 => MethodDefHandle
+	}
+
+	read_coded_index! {
+		read_implementation,
+		Implementation,
+		0b11,
+		0 => FileHandle,
+		1 => AssemblyRefHandle,
+		2 => ExportedTypeHandle
+	}
+
+	read_coded_index! {
+		read_custom_attribute_type,
+		CustomAttributeType,
+		0b1,
+		0 => MethodDefHandle,
+		1 => MemberRefHandle
+	}
+
+	read_coded_index! {
+		read_resolution_scope,
+		ResolutionScope,
+		0b11,
 		0 => ModuleHandle,
 		1 => ModuleRefHandle,
 		2 => AssemblyRefHandle,
 		3 => TypeRefHandle
 	}
+
+	read_coded_index! {
+		read_type_or_method_def,
+		TypeOrMethodDef,
+		0b1,
+		0 => TypeDefHandle,
+		1 => MethodDefHandle
+	}
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
-	type Handle: Into<usize>;
+	type Handle: Into<usize> + Copy;
+	const TYPE: TableType;
 
 	fn read_row(_reader: &mut TableReader<'_, '_>) -> io::Result<Self> {
 		unimplemented!()
@@ -127,21 +278,26 @@ pub struct Table<T: TableRow> {
 mod macros {
 	#[macro_export]
 	macro_rules! def_table {
-		($row:ty, $handle_name:ident) => {
+		($row:ident, $handle_name:ident) => {
 			def_handle!($handle_name);
 
 			impl crate::metadata::tables_stream::TableRow for $row {
 				type Handle = $handle_name;
+				const TYPE: crate::metadata::TableType = crate::metadata::TableType::$row;
 			}
 		};
 
-		($row:ty, $handle_name:ident,$read:item) => {
-			def_handle!($handle_name);
-
+		($row:ident, $handle_name:ident,$read:item) => {
 			use crate::metadata::*;
+
+			#[allow(unused_imports)]
+			use crate::metadata::tables::*;
+
+			def_handle!($handle_name);
 
 			impl crate::metadata::tables_stream::TableRow for $row {
 				type Handle = $handle_name;
+				const TYPE: crate::metadata::TableType = crate::metadata::TableType::$row;
 
 				$read
 			}
@@ -153,13 +309,24 @@ impl<T: TableRow> Table<T> {
 	pub fn rows(&self) -> &Box<[T]> {
 		&self.rows
 	}
+
+	pub fn get(&self, index: T::Handle) -> Option<&T> {
+		match index.into() {
+			0 => None,
+			i => self.rows.get(i - 1),
+		}
+	}
 }
 
 impl<T: TableRow> std::ops::Index<T::Handle> for Table<T> {
 	type Output = T;
 
 	fn index(&self, handle: T::Handle) -> &Self::Output {
-		&self.rows[handle.into()]
+		let index = handle.into();
+		if index == 0 {
+			panic!("Null index");
+		}
+		&self.rows[index - 1]
 	}
 }
 
@@ -177,7 +344,7 @@ pub struct TablesStream {
 	pub constant: Option<Table<Constant>>,
 	pub custom_attribute: Option<Table<CustomAttribute>>,
 	pub field_marshal: Option<Table<FieldMarshal>>,
-	pub decl_securitie: Option<Table<DeclSecurity>>,
+	pub decl_security: Option<Table<DeclSecurity>>,
 	pub class_layout: Option<Table<ClassLayout>>,
 	pub field_layout: Option<Table<FieldLayout>>,
 	pub standalone_sig: Option<Table<StandaloneSig>>,
@@ -195,7 +362,7 @@ pub struct TablesStream {
 	pub assembly_os: Option<Table<AssemblyOS>>,
 	pub assembly_ref: Option<Table<AssemblyRef>>,
 	pub assembly_ref_processor: Option<Table<AssemblyRefProcessor>>,
-	pub assembly_ref_os: Option<Table<AssemblRefOS>>,
+	pub assembly_ref_os: Option<Table<AssemblyRefOS>>,
 	pub file: Option<Table<File>>,
 	pub exported_type: Option<Table<ExportedType>>,
 	pub manifest_resource: Option<Table<ManifestResource>>,
@@ -287,7 +454,7 @@ impl<'data> TablesStream {
 		Some(TablesStream {
 			module: try_get_table!(Module),
 			type_ref: try_get_table!(TypeRef),
-			type_def: None,
+			type_def: try_get_table!(TypeDef),
 			field: None,
 			method_def: None,
 			param: None,
@@ -296,7 +463,7 @@ impl<'data> TablesStream {
 			constant: None,
 			custom_attribute: None,
 			field_marshal: None,
-			decl_securitie: None,
+			decl_security: None,
 			class_layout: None,
 			field_layout: None,
 			standalone_sig: None,

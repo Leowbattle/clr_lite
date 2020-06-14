@@ -3,7 +3,7 @@ mod macros {
 	#[macro_export]
 	macro_rules! def_handle {
 		($name:ident) => {
-			#[derive(Copy, Clone, Debug)]
+			#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 			pub struct $name(pub usize);
 
 			impl Into<usize> for $name {
@@ -51,11 +51,11 @@ pub use coded_index::*;
 /// ECMA-335 II.24.2.1
 pub struct Root<'pe> {
 	pub version: String,
-	pub strings_heap: Option<StringsHeap<'pe>>,
-	pub user_strings_heap: Option<UserStringsHeap<'pe>>,
-	pub blob_heap: Option<BlobHeap<'pe>>,
-	pub guid_heap: Option<GuidHeap<'pe>>,
-	pub tables: Option<TablesStream>,
+	pub strings_heap: StringsHeap<'pe>,
+	pub user_strings_heap: UserStringsHeap<'pe>,
+	pub blob_heap: BlobHeap<'pe>,
+	pub guid_heap: GuidHeap<'pe>,
+	pub tables: TablesStream,
 }
 
 use std::fmt;
@@ -141,11 +141,11 @@ impl<'pe> Root<'pe> {
 
 		let root = Root {
 			version,
-			strings_heap: Some(strings_heap),
-			user_strings_heap: Some(user_strings_heap),
-			blob_heap: Some(blob_heap),
-			guid_heap: Some(guid_heap),
-			tables: Some(tables),
+			strings_heap,
+			user_strings_heap,
+			blob_heap,
+			guid_heap,
+			tables,
 		};
 
 		Some(root)

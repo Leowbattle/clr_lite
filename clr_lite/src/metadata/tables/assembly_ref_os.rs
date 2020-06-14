@@ -1,4 +1,4 @@
 #[derive(Debug)]
-pub struct AssemblRefOS {}
+pub struct AssemblyRefOS {}
 
-crate::def_table!(AssemblRefOS, AssemblRefOSHandle);
+crate::def_table!(AssemblyRefOS, AssemblRefOSHandle);

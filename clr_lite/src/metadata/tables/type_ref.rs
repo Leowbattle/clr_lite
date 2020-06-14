@@ -17,3 +17,34 @@ crate::def_table!(
 		})
 	}
 );
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::pe::*;
+
+	#[test]
+	fn test_type_ref() {
+		let data = include_bytes!(
+			"../../../../tests/metadata/tables/TypeRefTests/bin/Debug/netcoreapp3.1/TypeRefTests.dll"
+		);
+
+		let pe = PeInfo::parse(data).unwrap();
+		let cli_header = pe.cli_header();
+		let metadata = cli_header.and_then(|c| c.metadata()).unwrap();
+
+		assert!(metadata
+			.tables
+			.type_ref
+			.as_ref()
+			.unwrap()
+			.rows()
+			.iter()
+			.any(|t| {
+				match metadata.strings_heap.get(t.type_name) {
+					Some(name) => name == "Console",
+					None => false,
+				}
+			}));
+	}
+}

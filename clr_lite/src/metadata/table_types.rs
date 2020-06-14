@@ -1,11 +1,8 @@
-use num_derive::{FromPrimitive, ToPrimitive};
-
 /// Reference: ECMA-335 §II.22
 ///
 /// "Tables are given both a name (e.g., "Assembly") and a number (e.g., 0x20).  The number for each table is listed immediately with its title in the following subclauses. The table numbers indicate the order in which their corresponding table shall appear in the PE file, and there is a set of bits (§II.24.2.6) saying whether a given table exists or not.  The number of a table is the position within that set of bits."
 // I wonder why they chose to make these values bit-indices into a u64 rather than bit flags.
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, FromPrimitive, ToPrimitive)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum TableType {
 	Module = 0x00,
 	TypeRef = 0x01,
