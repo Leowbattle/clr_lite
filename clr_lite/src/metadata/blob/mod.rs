@@ -12,6 +12,9 @@ pub use element_type::*;
 pub mod field_sig;
 pub use field_sig::*;
 
+pub mod type_def_or_ref;
+pub use type_def_or_ref::*;
+
 use crate::metadata;
 
 pub struct BlobReader<'data> {

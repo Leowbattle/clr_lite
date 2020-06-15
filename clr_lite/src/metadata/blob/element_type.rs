@@ -1,11 +1,13 @@
 use crate::metadata;
+use crate::metadata::TypeDefOrRef;
 
 use std::io;
 
+use super::ReadTypeDefOrRef;
 use super::*;
 
 /// ECMA-335 II.25.1.16
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum ElementType {
 	Void,
 	Bool,
@@ -23,8 +25,8 @@ pub enum ElementType {
 	String,
 	Pointer(Box<ElementType>),
 	ByRef(Box<ElementType>),
-	ValueType(metadata::Token),
-	Class(metadata::Token),
+	ValueType(TypeDefOrRef),
+	Class(TypeDefOrRef),
 
 	/// The type is a generic parameter with the specified index.
 	/// ```cs
@@ -59,10 +61,8 @@ pub enum ElementType {
 	UIntPtr,
 	FnPtr, // TODO
 	Object,
-	SzArray,
+	SzArray(Box<ElementType>),
 	MethodGenericParameter(u32),
-	RequiredModifier(metadata::Token),
-	OptionalModifier(metadata::Token),
 	Internal,
 	VarargsSentinel,
 	Pinned(Box<ElementType>),
@@ -97,8 +97,8 @@ impl ReadElementType for BlobReader<'_> {
 			0xe => Ok(ElementType::String),
 			0xf => Ok(ElementType::Pointer(Box::new(self.read_element_type()?))),
 			0x10 => Ok(ElementType::ByRef(Box::new(self.read_element_type()?))),
-			0x11 => Ok(ElementType::ValueType(self.read_metadata_token()?)),
-			0x12 => Ok(ElementType::Class(self.read_metadata_token()?)),
+			0x11 => Ok(ElementType::ValueType(self.read_type_def_or_ref()?)),
+			0x12 => Ok(ElementType::Class(self.read_type_def_or_ref()?)),
 			0x13 => Ok(ElementType::FieldGenericParameter(
 				self.read_compressed_u32()?,
 			)),
@@ -122,12 +122,10 @@ impl ReadElementType for BlobReader<'_> {
 			0x19 => Ok(ElementType::UIntPtr),
 			0x1b => unimplemented!(), // TODO FnPtr
 			0x1c => Ok(ElementType::Object),
-			0x1d => Ok(ElementType::SzArray),
+			0x1d => Ok(ElementType::SzArray(Box::new(self.read_element_type()?))),
 			0x1e => Ok(ElementType::MethodGenericParameter(
 				self.read_compressed_u32()?,
 			)),
-			0x1f => Ok(ElementType::RequiredModifier(self.read_metadata_token()?)),
-			0x20 => Ok(ElementType::OptionalModifier(self.read_metadata_token()?)),
 			0x21 => Ok(ElementType::Internal),
 			0x41 => Ok(ElementType::VarargsSentinel),
 			0x45 => Ok(ElementType::Pinned(Box::new(self.read_element_type()?))),

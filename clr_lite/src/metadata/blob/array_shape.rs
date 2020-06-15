@@ -2,12 +2,12 @@ use std::io;
 
 use super::*;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 /// ECMA-335 II.22.2.13
 pub struct ArrayShape {
-	rank: usize,
-	sizes: Box<[u32]>,
-	lower_bounds: Box<[u32]>,
+	pub rank: usize,
+	pub sizes: Box<[u32]>,
+	pub lower_bounds: Box<[u32]>,
 }
 
 pub trait ReadArrayShape {

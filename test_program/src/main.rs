@@ -1,8 +1,12 @@
 use clr_lite::pe::*;
 
 fn main() {
+	// let data = include_bytes!(
+	// 	"../../tests/metadata/tables/FieldTests/bin/Debug/netcoreapp3.1/FieldTests.dll"
+	// );
+
 	let data = include_bytes!(
-		"../../tests/metadata/tables/FieldTests/bin/Debug/netcoreapp3.1/FieldTests.dll"
+		"../../tests/metadata/blob/FieldSigTests/bin/Debug/netcoreapp3.1/FieldSigTests.dll"
 	);
 
 	let pe = PeInfo::parse(data).unwrap();
