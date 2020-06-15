@@ -22,6 +22,13 @@ impl<'data> BinaryReader<'data> {
 		result
 	}
 
+	pub fn peek_u8(&self) -> io::Result<u8> {
+		Ok(*self
+			.data
+			.get(self.pos)
+			.ok_or(io::Error::from(io::ErrorKind::UnexpectedEof))?)
+	}
+
 	pub fn read_slice<T: BinaryReadable>(&mut self, buf: &mut [T]) -> io::Result<()> {
 		let size = buf.len() * mem::size_of::<T>();
 		if self.data.len() - self.pos < size {
@@ -67,7 +74,7 @@ impl Seek for BinaryReader<'_> {
 			io::SeekFrom::Current(p) => (self.pos as i64).checked_add(p),
 		};
 		match pos {
-			Some(p) if p > 0 && p < self.data.len() as i64 => {
+			Some(p) if p >= 0 && p < self.data.len() as i64 => {
 				self.pos = p as usize;
 				Ok(p as u64)
 			}

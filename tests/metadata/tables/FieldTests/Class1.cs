@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -27,7 +28,7 @@ namespace FieldTests
 
 	class Class3
 	{
-		static int MyStatic;
+		static int? MyStatic;
 		readonly int MyReadonly;
 		const int MyConst = 1;
 

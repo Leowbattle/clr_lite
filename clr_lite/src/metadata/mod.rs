@@ -30,6 +30,9 @@ pub use user_strings_heap::*;
 pub mod blob_heap;
 pub use blob_heap::*;
 
+pub mod blob;
+pub use blob::*;
+
 pub mod guid_heap;
 pub use guid_heap::*;
 
@@ -37,7 +40,6 @@ pub use guid_heap::*;
 pub mod tables_stream;
 pub use tables_stream::*;
 
-pub mod signatures;
 pub mod tables;
 
 pub mod table_types;

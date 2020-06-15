@@ -35,8 +35,10 @@ fn main() {
 		};
 
 		for i in td.field_list.0..field_end {
-			let name = metadata.strings_heap.get(fields[i.into()].name).unwrap();
-			println!("\t: {}", name);
+			let field = &fields[i.into()];
+			let name = metadata.strings_heap.get(field.name).unwrap();
+			let sig = metadata.blob_heap.get_field_sig(field.signature);
+			println!("\t: {}, {:?}", name, sig);
 		}
 
 		println!("");
