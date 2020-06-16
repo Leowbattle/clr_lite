@@ -2,6 +2,7 @@ use std::fmt;
 
 use super::{BlobReader, FieldSig, ReadFieldSig};
 
+// TODO add cache here like in StringsHeap
 /// ECMA-225 II.24.2.4
 pub struct BlobHeap<'data> {
 	pub data: &'data [u8],

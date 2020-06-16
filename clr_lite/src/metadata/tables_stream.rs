@@ -99,8 +99,12 @@ impl<'data, 'header> TableReader<'data, 'header> {
 	// 	}
 	// }
 
+	read_handle!(read_module_handle, Module);
+	read_handle!(read_type_ref_handle, TypeRef);
+	read_handle!(read_type_def_handle, TypeDef);
 	read_handle!(read_field_handle, Field);
 	read_handle!(read_method_def_handle, MethodDef);
+	read_handle!(read_param_handle, Param);
 
 	pub fn read_string_handle(&mut self) -> io::Result<StringHandle> {
 		if self.wide_string_handle {
@@ -265,7 +269,7 @@ pub trait TableRow: Sized + std::fmt::Debug {
 	const TYPE: TableType;
 
 	fn read_row(_reader: &mut TableReader<'_, '_>) -> io::Result<Self> {
-		unimplemented!()
+		Err(io::Error::new(io::ErrorKind::Other, "Not implemented"))
 	}
 }
 
@@ -306,7 +310,7 @@ mod macros {
 }
 
 impl<T: TableRow> Table<T> {
-	pub fn rows(&self) -> &Box<[T]> {
+	pub fn rows(&self) -> &[T] {
 		&self.rows
 	}
 
@@ -333,43 +337,43 @@ impl<T: TableRow> std::ops::Index<T::Handle> for Table<T> {
 /// ECMA-335 II.24.2.6
 #[derive(Debug)]
 pub struct TablesStream {
-	pub module: Option<Table<Module>>,
-	pub type_ref: Option<Table<TypeRef>>,
-	pub type_def: Option<Table<TypeDef>>,
-	pub field: Option<Table<Field>>,
-	pub method_def: Option<Table<MethodDef>>,
-	pub param: Option<Table<Param>>,
-	pub interface_impl: Option<Table<InterfaceImpl>>,
-	pub member_ref: Option<Table<MemberRef>>,
-	pub constant: Option<Table<Constant>>,
-	pub custom_attribute: Option<Table<CustomAttribute>>,
-	pub field_marshal: Option<Table<FieldMarshal>>,
-	pub decl_security: Option<Table<DeclSecurity>>,
-	pub class_layout: Option<Table<ClassLayout>>,
-	pub field_layout: Option<Table<FieldLayout>>,
-	pub standalone_sig: Option<Table<StandaloneSig>>,
-	pub event_map: Option<Table<EventMap>>,
-	pub event: Option<Table<Event>>,
-	pub property_map: Option<Table<PropertyMap>>,
-	pub property: Option<Table<Property>>,
-	pub method_semantic: Option<Table<MethodSemantics>>,
-	pub method_impl: Option<Table<MethodImpl>>,
-	pub module_ref: Option<Table<ModuleRef>>,
-	pub type_spec: Option<Table<TypeSpec>>,
-	pub impl_map: Option<Table<ImplMap>>,
-	pub field_rva: Option<Table<FieldRva>>,
-	pub assembly: Option<Table<Assembly>>,
-	pub assembly_os: Option<Table<AssemblyOS>>,
-	pub assembly_ref: Option<Table<AssemblyRef>>,
-	pub assembly_ref_processor: Option<Table<AssemblyRefProcessor>>,
-	pub assembly_ref_os: Option<Table<AssemblyRefOS>>,
-	pub file: Option<Table<File>>,
-	pub exported_type: Option<Table<ExportedType>>,
-	pub manifest_resource: Option<Table<ManifestResource>>,
-	pub nested_class: Option<Table<NestedClass>>,
-	pub generic_param: Option<Table<GenericParam>>,
-	pub method_spec: Option<Table<MethodSpec>>,
-	pub generic_param_constraint: Option<Table<GenericParamConstraint>>,
+	pub module: Table<Module>,
+	pub type_ref: Table<TypeRef>,
+	pub type_def: Table<TypeDef>,
+	pub field: Table<Field>,
+	pub method_def: Table<MethodDef>,
+	pub param: Table<Param>,
+	pub interface_impl: Table<InterfaceImpl>,
+	pub member_ref: Table<MemberRef>,
+	pub constant: Table<Constant>,
+	pub custom_attribute: Table<CustomAttribute>,
+	pub field_marshal: Table<FieldMarshal>,
+	pub decl_security: Table<DeclSecurity>,
+	pub class_layout: Table<ClassLayout>,
+	pub field_layout: Table<FieldLayout>,
+	pub standalone_sig: Table<StandaloneSig>,
+	pub event_map: Table<EventMap>,
+	pub event: Table<Event>,
+	pub property_map: Table<PropertyMap>,
+	pub property: Table<Property>,
+	pub method_semantics: Table<MethodSemantics>,
+	pub method_impl: Table<MethodImpl>,
+	pub module_ref: Table<ModuleRef>,
+	pub type_spec: Table<TypeSpec>,
+	pub impl_map: Table<ImplMap>,
+	pub field_rva: Table<FieldRva>,
+	pub assembly: Table<Assembly>,
+	pub assembly_os: Table<AssemblyOS>,
+	pub assembly_ref: Table<AssemblyRef>,
+	pub assembly_ref_processor: Table<AssemblyRefProcessor>,
+	pub assembly_ref_os: Table<AssemblyRefOS>,
+	pub file: Table<File>,
+	pub exported_type: Table<ExportedType>,
+	pub manifest_resource: Table<ManifestResource>,
+	pub nested_class: Table<NestedClass>,
+	pub generic_param: Table<GenericParam>,
+	pub method_spec: Table<MethodSpec>,
+	pub generic_param_constraint: Table<GenericParamConstraint>,
 }
 
 use super::TableType;
@@ -391,7 +395,7 @@ impl BinaryReadable for TablesHeader {
 		let major_version = reader.read::<u8>()?;
 		let minor_version = reader.read::<u8>()?;
 		let heap_sizes = HeapSizeFlags::from_bits(reader.read::<u8>()?)
-			.ok_or(io::Error::from(io::Error::from(io::ErrorKind::InvalidData)))?;
+			.ok_or_else(|| io::Error::from(io::ErrorKind::InvalidData))?;
 
 		let _reserved2 = reader.read::<u8>()?;
 
@@ -437,58 +441,65 @@ impl<'data> TablesStream {
 		let header = reader.read::<TablesHeader>().ok()?;
 		let mut table_reader = TableReader::new(reader, &header);
 
-		macro_rules! try_get_table {
+		// TODO Find a way to make this macro into a dynamically dispatched function to reduce code bloat. This will also have almost no negative performance ramifications because it is only called once for every table type, and the overhead of a virtual method call is much lower than the time it takes to actually parse the tables.
+		macro_rules! get_table {
 			($name:ident) => {
-				header.tables.get(&TableType::$name).and_then(|&count| {
-					let mut table = Vec::with_capacity(count as usize);
-					for _ in 0..count {
-						table.push($name::read_row(&mut table_reader).ok()?);
-						}
-					Some(Table {
-						rows: table.into_boxed_slice(),
+				header
+					.tables
+					.get(&TableType::$name)
+					.and_then(|&count| {
+						let mut table = Vec::with_capacity(count as usize);
+						for _ in 0..count {
+							table.push($name::read_row(&mut table_reader).ok()?);
+							}
+						Some(Table {
+							rows: table.into_boxed_slice(),
 						})
-					})
+						})
+					.unwrap_or(Table {
+						rows: vec![].into_boxed_slice(),
+						})
 			};
 		}
 
 		Some(TablesStream {
-			module: try_get_table!(Module),
-			type_ref: try_get_table!(TypeRef),
-			type_def: try_get_table!(TypeDef),
-			field: try_get_table!(Field),
-			method_def: None,
-			param: None,
-			interface_impl: None,
-			member_ref: None,
-			constant: None,
-			custom_attribute: None,
-			field_marshal: None,
-			decl_security: None,
-			class_layout: None,
-			field_layout: None,
-			standalone_sig: None,
-			event_map: None,
-			event: None,
-			property_map: None,
-			property: None,
-			method_semantic: None,
-			method_impl: None,
-			module_ref: None,
-			type_spec: None,
-			impl_map: None,
-			field_rva: None,
-			assembly: None,
-			assembly_os: None,
-			assembly_ref: None,
-			assembly_ref_processor: None,
-			assembly_ref_os: None,
-			file: None,
-			exported_type: None,
-			manifest_resource: None,
-			nested_class: None,
-			generic_param: None,
-			method_spec: None,
-			generic_param_constraint: None,
+			module: get_table!(Module),
+			type_ref: get_table!(TypeRef),
+			type_def: get_table!(TypeDef),
+			field: get_table!(Field),
+			method_def: get_table!(MethodDef),
+			param: get_table!(Param),
+			interface_impl: get_table!(InterfaceImpl),
+			member_ref: get_table!(MemberRef),
+			constant: get_table!(Constant),
+			custom_attribute: get_table!(CustomAttribute),
+			field_marshal: get_table!(FieldMarshal),
+			decl_security: get_table!(DeclSecurity),
+			class_layout: get_table!(ClassLayout),
+			field_layout: get_table!(FieldLayout),
+			standalone_sig: get_table!(StandaloneSig),
+			event_map: get_table!(EventMap),
+			event: get_table!(Event),
+			property_map: get_table!(PropertyMap),
+			property: get_table!(Property),
+			method_semantics: get_table!(MethodSemantics),
+			method_impl: get_table!(MethodImpl),
+			module_ref: get_table!(ModuleRef),
+			type_spec: get_table!(TypeSpec),
+			impl_map: get_table!(ImplMap),
+			field_rva: get_table!(FieldRva),
+			assembly: get_table!(Assembly),
+			assembly_os: get_table!(AssemblyOS),
+			assembly_ref: get_table!(AssemblyRef),
+			assembly_ref_processor: get_table!(AssemblyRefProcessor),
+			assembly_ref_os: get_table!(AssemblyRefOS),
+			file: get_table!(File),
+			exported_type: get_table!(ExportedType),
+			manifest_resource: get_table!(ManifestResource),
+			nested_class: get_table!(NestedClass),
+			generic_param: get_table!(GenericParam),
+			method_spec: get_table!(MethodSpec),
+			generic_param_constraint: get_table!(GenericParamConstraint),
 		})
 	}
 }

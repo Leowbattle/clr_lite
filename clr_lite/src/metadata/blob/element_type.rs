@@ -1,4 +1,3 @@
-use crate::metadata;
 use crate::metadata::TypeDefOrRef;
 
 use std::io;
@@ -32,8 +31,8 @@ pub enum ElementType {
 	/// ```cs
 	/// class G<T, U>
 	/// {
-	/// 	T t; // Element type is Generic(0)
-	/// 	U u; // Element type is Generic(1)
+	///     T t; // Element type is Generic(0)
+	///     U u; // Element type is Generic(1)
 	/// }
 	/// ```
 	FieldGenericParameter(u32),
@@ -46,8 +45,8 @@ pub enum ElementType {
 	/// The type is a specialisation of a generic type.
 	/// ```cs
 	/// // Element type is GenericInstantiation {
-	/// // 		r#type: Class(metadata token for System.Collections.Generic.List)
-	/// // 		generic_args: [Int]
+	/// //     r#type: Class(metadata token for System.Collections.Generic.List)
+	/// //     generic_args: [Int]
 	/// // }
 	/// List<int> l;
 	/// ```

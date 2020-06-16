@@ -59,7 +59,7 @@ crate::def_table!(
 	TypeDefHandle,
 	fn read_row(reader: &mut TableReader<'_, '_>) -> io::Result<TypeDef> {
 		let flags = TypeAttributes::from_bits(reader.reader.read::<u32>()?)
-			.ok_or(io::Error::from(io::ErrorKind::InvalidData))?;
+			.ok_or_else(|| io::Error::from(io::ErrorKind::InvalidData))?;
 
 		let type_name = reader.read_string_handle()?;
 		let type_namespace = reader.read_string_handle()?;
@@ -96,8 +96,8 @@ mod tests {
 		let metadata = cli_header.and_then(|c| c.metadata()).unwrap();
 
 		let strings = metadata.strings_heap;
-		let types = metadata.tables.type_def.as_ref().unwrap();
-		let fields = metadata.tables.field.as_ref().unwrap();
+		let types = &metadata.tables.type_def;
+		let fields = &metadata.tables.field;
 
 		#[derive(Debug)]
 		struct TypeInfo<'a> {
@@ -163,8 +163,6 @@ mod tests {
 				(metadata
 					.tables
 					.type_ref
-					.as_ref()
-					.unwrap()
 					.rows()
 					.iter()
 					.position(|r| strings.get(r.type_name) == Some("Exception"))
@@ -191,8 +189,6 @@ mod tests {
 				(metadata
 					.tables
 					.type_ref
-					.as_ref()
-					.unwrap()
 					.rows()
 					.iter()
 					.position(|r| strings.get(r.type_name) == Some("ValueType"))

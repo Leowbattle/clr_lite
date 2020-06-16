@@ -50,9 +50,9 @@ mod tests {
 
 		let strings = metadata.strings_heap;
 		let blob = metadata.blob_heap;
-		let types = metadata.tables.type_def.as_ref().unwrap();
-		let type_refs = metadata.tables.type_ref.as_ref().unwrap();
-		let fields = metadata.tables.field.as_ref().unwrap();
+		let types = &metadata.tables.type_def;
+		let type_refs = &metadata.tables.type_ref;
+		let fields = &metadata.tables.field;
 
 		let fields = fields
 			.rows()

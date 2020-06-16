@@ -20,7 +20,6 @@ crate::def_table!(
 
 #[cfg(test)]
 mod tests {
-	use super::*;
 	use crate::pe::*;
 
 	#[test]
@@ -33,18 +32,11 @@ mod tests {
 		let cli_header = pe.cli_header();
 		let metadata = cli_header.and_then(|c| c.metadata()).unwrap();
 
-		assert!(metadata
-			.tables
-			.type_ref
-			.as_ref()
-			.unwrap()
-			.rows()
-			.iter()
-			.any(|t| {
-				match metadata.strings_heap.get(t.type_name) {
-					Some(name) => name == "Console",
-					None => false,
-				}
-			}));
+		assert!(metadata.tables.type_ref.rows().iter().any(|t| {
+			match metadata.strings_heap.get(t.type_name) {
+				Some(name) => name == "Console",
+				None => false,
+			}
+		}));
 	}
 }

@@ -40,7 +40,7 @@ crate::def_table!(
 	FieldHandle,
 	fn read_row(reader: &mut TableReader<'_, '_>) -> io::Result<Field> {
 		let flags = FieldAttributes::from_bits(reader.reader.read::<u16>()?)
-			.ok_or(io::Error::from(io::ErrorKind::InvalidData))?;
+			.ok_or_else(|| io::Error::from(io::ErrorKind::InvalidData))?;
 		let name = reader.read_string_handle()?;
 		let signature = reader.read_blob_handle()?;
 
@@ -69,8 +69,8 @@ mod tests {
 		let metadata = cli_header.and_then(|c| c.metadata()).unwrap();
 
 		let strings = metadata.strings_heap;
-		let types = metadata.tables.type_def.as_ref().unwrap();
-		let fields = metadata.tables.field.as_ref().unwrap();
+		let types = &metadata.tables.type_def;
+		let fields = &metadata.tables.field;
 
 		#[derive(Debug)]
 		struct TypeInfo<'a> {
