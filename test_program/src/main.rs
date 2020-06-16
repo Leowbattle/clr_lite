@@ -77,4 +77,6 @@ fn main() {
 			println!();
 		}
 	}
+
+	dbg!(metadata.tables.param);
 }

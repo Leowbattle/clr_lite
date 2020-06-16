@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 
 namespace TestProgram
 {
@@ -7,7 +6,7 @@ namespace TestProgram
 	{
 		static void Main(string[] args)
 		{
-			
+
 		}
 	}
 }

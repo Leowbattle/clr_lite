@@ -9,7 +9,7 @@ namespace MethodDefTests
 		void Method() { }
 		static void Static() { }
 		void Vararg(__arglist) { }
-		void Generic<T>(T t, int x) { }
+		void Generic<T>(T t, int x = 1) { }
 		int ReturnsInt() => 42;
 		Class1 ReturnsClass1() => new Class1();
 	}
