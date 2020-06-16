@@ -6,7 +6,6 @@ namespace TestProgram
 	{
 		static void Main(string[] args)
 		{
-
 		}
 	}
 }

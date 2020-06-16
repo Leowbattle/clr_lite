@@ -2,7 +2,7 @@ use clr_lite::pe::*;
 
 fn main() {
 	let data = include_bytes!(
-		"../../tests/metadata/tables/MethodDefTests/bin/Debug/netcoreapp3.1/MethodDefTests.dll"
+		"../../tests/metadata/tables/InterfaceImplTests/bin/Debug/netcoreapp3.1/InterfaceImplTests.dll"
 	);
 
 	// let data =
@@ -78,5 +78,5 @@ fn main() {
 		}
 	}
 
-	dbg!(metadata.tables.param);
+	dbg!(metadata.tables.interface_impl);
 }
