@@ -1,6 +1,6 @@
 use std::fmt;
 
-use super::{BlobReader, FieldSig, ReadFieldSig};
+use super::{BlobReader, FieldSig, MethodDefSig, ReadFieldSig, ReadMethodDefSig};
 
 // TODO add cache here like in StringsHeap
 /// ECMA-225 II.24.2.4
@@ -28,6 +28,18 @@ impl<'data> BlobHeap<'data> {
 			None
 		} else {
 			BlobReader::new(&self.data[index..]).read_field_sig().ok()
+		}
+	}
+
+	pub fn get_method_def_sig(&self, index: BlobHandle) -> Option<MethodDefSig> {
+		let index = index.into();
+
+		if index > self.data.len() {
+			None
+		} else {
+			BlobReader::new(&self.data[index..])
+				.read_method_def_sig()
+				.ok()
 		}
 	}
 }

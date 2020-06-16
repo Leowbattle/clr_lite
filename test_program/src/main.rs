@@ -2,15 +2,11 @@ use clr_lite::pe::*;
 
 fn main() {
 	let data = include_bytes!(
-		"../../tests/metadata/tables/FieldTests/bin/Debug/netcoreapp3.1/FieldTests.dll"
+		"../../tests/metadata/tables/MethodDefTests/bin/Debug/netcoreapp3.1/MethodDefTests.dll"
 	);
 
-	// let data = include_bytes!(
-	// 	"../../tests/metadata/tables/MethodDefTests/bin/Debug/netcoreapp3.1/MethodDefTests.dll"
-	// );
-
-	let data =
-		include_bytes!("C:/Program Files (x86)/steam/steamapps/common/Terraria/Terraria.exe");
+	// let data =
+	// 	include_bytes!("C:/Program Files (x86)/steam/steamapps/common/Terraria/Terraria.exe");
 
 	let pe = PeInfo::parse(data).unwrap();
 	let cli_header = pe.cli_header();
@@ -35,7 +31,8 @@ fn main() {
 			_ => Some(""),
 		};
 		println!(
-			"{}{} : {:?}",
+			"{} {}{} : {:?}",
+			i + 1,
 			if namespace.is_empty() {
 				String::new()
 			} else {
@@ -69,7 +66,11 @@ fn main() {
 		for i in td.method_list.0..method_end {
 			let method = &methods[i.into()];
 			let name = metadata.strings_heap.get(method.name).unwrap();
-			println!("\t{}", name);
+			println!(
+				"\t{} {:?}",
+				name,
+				metadata.blob_heap.get_method_def_sig(method.signature)
+			);
 		}
 
 		if i != type_defs.rows().len() - 1 {

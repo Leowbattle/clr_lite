@@ -17,7 +17,7 @@ bitflags! {
 	/// Note: The fmt::Debug implementation is wrong, but there is no way to override it
 	pub struct MethodImplAttributes : u16 {
 		const CodeTypeMask = 0x3;
-		const IL = 0x1;
+		const IL = 0x0;
 		const Native = 0x1;
 		const Optil = 0x2;
 		const Runtime = 0x3;
@@ -93,3 +93,139 @@ crate::def_table!(
 		})
 	}
 );
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::metadata::blob::*;
+	use crate::metadata::tables::*;
+	use crate::pe::*;
+
+	use std::collections::HashMap;
+
+	#[test]
+	fn test_method_def() {
+		let data = include_bytes!(
+			"../../../../tests/metadata/tables/MethodDefTests/bin/Debug/netcoreapp3.1/MethodDefTests.dll"
+		);
+
+		let pe = PeInfo::parse(data).unwrap();
+		let cli_header = pe.cli_header();
+		let metadata = cli_header.and_then(|c| c.metadata()).unwrap();
+
+		let strings = metadata.strings_heap;
+		let blob = metadata.blob_heap;
+		let type_defs = &metadata.tables.type_def;
+		let methods = &metadata.tables.method_def;
+
+		#[derive(Debug)]
+		struct MethodInfo<'a> {
+			def: &'a MethodDef,
+			sig: MethodDefSig,
+		}
+
+		let methods = methods
+			.rows()
+			.iter()
+			.map(|m| {
+				(
+					strings.get(m.name.into()).unwrap(),
+					MethodInfo {
+						def: m,
+						sig: blob.get_method_def_sig(m.signature).unwrap(),
+					},
+				)
+			})
+			.collect::<HashMap<&str, MethodInfo>>();
+
+		let method = methods.get("Method").unwrap();
+		assert_eq!(
+			method.sig,
+			MethodDefSig {
+				instance: true,
+				explicit_this: false,
+				vararg: false,
+				num_generic_args: 0,
+				return_type: ElementType::Void,
+				params: Box::new([])
+			}
+		);
+
+		let r#static = methods.get("Static").unwrap();
+		assert_eq!(
+			r#static.sig,
+			MethodDefSig {
+				instance: false,
+				explicit_this: false,
+				vararg: false,
+				num_generic_args: 0,
+				return_type: ElementType::Void,
+				params: Box::new([])
+			}
+		);
+
+		let vararg = methods.get("Vararg").unwrap();
+		assert_eq!(
+			vararg.sig,
+			MethodDefSig {
+				instance: true,
+				explicit_this: false,
+				vararg: true,
+				num_generic_args: 0,
+				return_type: ElementType::Void,
+				params: Box::new([])
+			}
+		);
+
+		let generic = methods.get("Generic").unwrap();
+		assert_eq!(
+			generic.sig,
+			MethodDefSig {
+				instance: true,
+				explicit_this: false,
+				vararg: false,
+				num_generic_args: 1,
+				return_type: ElementType::Void,
+				params: Box::new([ElementType::MethodGenericParameter(0), ElementType::Int])
+			}
+		);
+
+		let returns_int = methods.get("ReturnsInt").unwrap();
+		assert_eq!(
+			returns_int.sig,
+			MethodDefSig {
+				instance: true,
+				explicit_this: false,
+				vararg: false,
+				num_generic_args: 0,
+				return_type: ElementType::Int,
+				params: Box::new([])
+			}
+		);
+
+		let find_type_def = |name| {
+			TypeDefHandle(
+				type_defs
+					.rows()
+					.iter()
+					.position(|r| strings.get(r.type_name).unwrap() == name)
+					.unwrap() + 1,
+			)
+		};
+
+		let returns_class1 = methods.get("ReturnsClass1").unwrap();
+		assert_eq!(
+			returns_class1.sig,
+			MethodDefSig {
+				instance: true,
+				explicit_this: false,
+				vararg: false,
+				num_generic_args: 0,
+				return_type: ElementType::Class(TypeDefOrRef::TypeDefHandle(find_type_def(
+					"Class1"
+				))),
+				params: Box::new([])
+			}
+		);
+	}
+}

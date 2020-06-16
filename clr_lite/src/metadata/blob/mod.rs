@@ -12,10 +12,11 @@ pub use element_type::*;
 pub mod field_sig;
 pub use field_sig::*;
 
+pub mod method_def_sig;
+pub use method_def_sig::*;
+
 pub mod type_def_or_ref;
 pub use type_def_or_ref::*;
-
-use crate::metadata;
 
 pub struct BlobReader<'data> {
 	reader: BinaryReader<'data>,
@@ -37,9 +38,5 @@ impl<'data> BlobReader<'data> {
 		} else {
 			Ok(self.reader.read::<u8>()? as u32)
 		}
-	}
-
-	fn read_metadata_token(&mut self) -> io::Result<metadata::Token> {
-		Ok(metadata::Token(self.read_compressed_u32()?))
 	}
 }
