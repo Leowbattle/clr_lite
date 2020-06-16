@@ -78,5 +78,18 @@ fn main() {
 		}
 	}
 
-	dbg!(metadata.tables.interface_impl);
+	for m in metadata.tables.member_ref.rows() {
+		println!(
+			"{}.{}",
+			metadata
+				.strings_heap
+				.get(match m.class {
+					clr_lite::metadata::MemberRefParent::TypeRefHandle(t) =>
+						metadata.tables.type_ref[t].type_name,
+					_ => unimplemented!(),
+				})
+				.unwrap(),
+			metadata.strings_heap.get(m.name).unwrap()
+		);
+	}
 }

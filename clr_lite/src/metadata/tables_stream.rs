@@ -75,30 +75,6 @@ impl<'data, 'header> TableReader<'data, 'header> {
 		}
 	}
 
-	// pub fn read_handle(&mut self, table: TableType) -> io::Result<usize> {
-	// 	// ECMA-335 II.22: "Each index is either 2 or 4 bytes wide.
-	// 	// The index points into the same or another table, or into one of the four heaps.
-	// 	// The size of each index column in a table is only made 4 bytes if it needs to be for that particular module.
-	// 	// So, if a particular column indexes a table, or tables, whose highest row number fits in a 2-byte value, the indexer column need only be 2 bytes wide.
-	// 	// Conversely, for tables containing 64K or more rows, an indexer of that table will be 4 bytes wide."
-
-	// 	let size = self
-	// 		.header
-	// 		.tables
-	// 		.get(&table)
-	// 		.map(|&count| match count {
-	// 			c if c > 65535 => 4,
-	// 			_ => 2,
-	// 		})
-	// 		.ok_or(io::Error::from(io::ErrorKind::InvalidData))?;
-
-	// 	match size {
-	// 		4 => Ok(self.reader.read::<u32>()? as usize),
-	// 		2 => Ok(self.reader.read::<u16>()? as usize),
-	// 		_ => unreachable!(),
-	// 	}
-	// }
-
 	read_handle!(read_module_handle, Module);
 	read_handle!(read_type_ref_handle, TypeRef);
 	read_handle!(read_type_def_handle, TypeDef);
