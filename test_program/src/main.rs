@@ -1,3 +1,9 @@
+use clr_lite::metadata::Metadata;
+
 fn main() {
-    println!("Hello, world!");
+	let data = include_bytes!("../../tests/EmptyExe/bin/Debug/netcoreapp3.1/EmptyExe.dll");
+	// let data =
+	// 	include_bytes!("C:/Program Files (x86)/steam/steamapps/common/Terraria/Terraria.exe");
+
+	let metadata = Metadata::read(data).unwrap();
 }
