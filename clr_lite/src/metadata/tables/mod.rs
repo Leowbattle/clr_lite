@@ -9,10 +9,25 @@ pub use coded_index::*;
 pub mod module;
 pub use module::*;
 
+pub mod type_ref;
+pub use type_ref::*;
+
+pub mod module_ref;
+pub use module_ref::*;
+
+pub mod assembly_ref;
+pub use assembly_ref::*;
+
 use crate::metadata::*;
 
 #[derive(Debug)]
 pub struct Table<T: TableRow>(Box<[T]>);
+
+impl<T: TableRow> Table<T> {
+	pub fn rows(&self) -> std::slice::Iter<T> {
+		self.0.iter()
+	}
+}
 
 impl<T: TableRow> std::ops::Index<T::Handle> for Table<T> {
 	type Output = T;
@@ -24,6 +39,7 @@ impl<T: TableRow> std::ops::Index<T::Handle> for Table<T> {
 
 pub struct Tables {
 	pub module: Table<Module>,
+	pub type_ref: Table<TypeRef>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -55,6 +71,8 @@ pub struct TableReader<'data> {
 	wide_string: bool,
 	wide_guid: bool,
 	wide_blob: bool,
+
+	wide_resolution_scope: bool,
 }
 
 bitflags! {
@@ -114,6 +132,12 @@ impl<'data> TableReader<'data> {
 			wide_string: heap_sizes.contains(HeapSizeFlags::String),
 			wide_guid: heap_sizes.contains(HeapSizeFlags::Guid),
 			wide_blob: heap_sizes.contains(HeapSizeFlags::Blob),
+
+			wide_resolution_scope: is_coded_index_wide(
+				ResolutionScopeHandle::LARGE_ROW_SIZE,
+				ResolutionScopeHandle::TABLES,
+				&row_counts,
+			),
 		}
 		.read_tables()
 	}
@@ -131,6 +155,7 @@ impl<'data> TableReader<'data> {
 
 		Ok(Tables {
 			module: get_table!(Module),
+			type_ref: get_table!(TypeRef),
 		})
 	}
 
@@ -160,9 +185,34 @@ impl<'data> TableReader<'data> {
 			false => Ok(BlobHandle(self._read::<u16>()? as usize)),
 		}
 	}
+
+	pub fn read_resolution_scope_handle(
+		&mut self,
+	) -> Result<ResolutionScopeHandle, TableReaderError> {
+		let data = match self.wide_resolution_scope {
+			true => self._read::<u32>()? as usize,
+			false => self._read::<u16>()? as usize,
+		};
+
+		let tag = data & ResolutionScopeHandle::TAG_MASK;
+		let index = (data & !ResolutionScopeHandle::TAG_MASK) >> (ResolutionScopeHandle::TAG_MASK);
+
+		Ok(match tag {
+			0 => ResolutionScopeHandle::Module(ModuleHandle(index)),
+			1 => ResolutionScopeHandle::ModuleRef(ModuleRefHandle(index)),
+			2 => ResolutionScopeHandle::AssemblyRef(AssemblyRefHandle(index)),
+			3 => ResolutionScopeHandle::TypeRef(TypeRefHandle(index)),
+			_ => {
+				return Err(TableReaderError::BadImageFormat(format!(
+					"Invalid ResolutionScope tag {}",
+					tag
+				)))
+			}
+		})
+	}
 }
 
-fn is_coded_index_wide(large_row_size: usize, row_counts: &[usize], tables: &[TableType]) -> bool {
+fn is_coded_index_wide(large_row_size: usize, tables: &[TableType], row_counts: &[usize]) -> bool {
 	tables
 		.iter()
 		.any(|&t| row_counts[t as usize] > large_row_size)
