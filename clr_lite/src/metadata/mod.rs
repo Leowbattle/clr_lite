@@ -212,6 +212,10 @@ impl<'data> Metadata<'data> {
 	// 	self.version
 	// }
 
+	pub fn strings(&self) -> &'data StringsHeap {
+		&self.strings_heap
+	}
+
 	pub fn tables<'a>(&'a self) -> &'a Tables {
 		&self.tables
 	}

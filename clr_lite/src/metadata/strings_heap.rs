@@ -7,19 +7,7 @@ pub struct StringsHeap<'data> {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct StringHandle(usize);
-
-impl StringHandle {
-	fn index(self) -> usize {
-		self.0
-	}
-}
-
-impl From<usize> for StringHandle {
-	fn from(x: usize) -> StringHandle {
-		StringHandle(x)
-	}
-}
+pub struct StringHandle(pub(crate) usize);
 
 impl<'data> StringsHeap<'data> {
 	pub(crate) fn new(data: &'data [u8]) -> Self {
@@ -30,17 +18,14 @@ impl<'data> StringsHeap<'data> {
 	}
 
 	pub fn get(&self, index: StringHandle) -> Option<&'data str> {
-		if index.index() > self.data.len() {
+		if index.0 > self.data.len() {
 			None
 		} else {
 			Some(
 				self.cache.borrow_mut().entry(index).or_insert(
 					std::str::from_utf8(
-						&self.data[index.index()
-							..index.index()
-								+ self.data[index.index()..]
-									.iter()
-									.position(|&c| c == b'\0')?],
+						&self.data[index.0
+							..index.0 + self.data[index.0..].iter().position(|&c| c == b'\0')?],
 					)
 					.ok()?,
 				),

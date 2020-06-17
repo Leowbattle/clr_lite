@@ -9,13 +9,28 @@ pub use coded_index::*;
 pub mod module;
 pub use module::*;
 
+use crate::metadata::*;
+
+#[derive(Debug)]
 pub struct Table<T: TableRow>(Box<[T]>);
+
+impl<T: TableRow> std::ops::Index<T::Handle> for Table<T> {
+	type Output = T;
+
+	fn index(&self, h: T::Handle) -> &Self::Output {
+		&self.0[h.into()]
+	}
+}
 
 pub struct Tables {
 	pub module: Table<Module>,
 }
 
-pub trait TableRow {}
+pub trait TableRow: Sized + std::fmt::Debug {
+	type Handle: Into<usize>;
+
+	fn read_row(reader: &mut TableReader<'_>) -> Result<Self, TableReaderError>;
+}
 
 use binary_reader::*;
 
@@ -32,7 +47,7 @@ impl ToString for TableReaderError {
 	}
 }
 
-pub(crate) struct TableReader<'data> {
+pub struct TableReader<'data> {
 	reader: BinaryReader<'data>,
 	row_counts: [usize; 64],
 
@@ -104,12 +119,46 @@ impl<'data> TableReader<'data> {
 	}
 
 	fn read_tables(mut self) -> Result<Tables, TableReaderError> {
-		let module = {
-			let module = Vec::with_capacity(self.row_counts[TableType::Module as usize]);
-			Table::<Module>(module.into_boxed_slice())
-		};
+		macro_rules! get_table {
+			($type:ident) => {{
+				let mut table = Vec::with_capacity(self.row_counts[TableType::$type as usize]);
+				for _ in 0..table.capacity() {
+					table.push($type::read_row(&mut self)?);
+					}
+				Table::<$type>(table.into_boxed_slice())
+				}};
+		}
 
-		Ok(Tables { module })
+		Ok(Tables {
+			module: get_table!(Module),
+		})
+	}
+
+	fn _read<T: CopyFromBytes>(&mut self) -> Result<T, TableReaderError> {
+		self.reader
+			.read::<T>()
+			.ok_or_else(|| TableReaderError::BadImageFormat("Unexpected EOF".to_string()))
+	}
+
+	pub fn read_string_handle(&mut self) -> Result<StringHandle, TableReaderError> {
+		match self.wide_string {
+			true => Ok(StringHandle(self._read::<u32>()? as usize)),
+			false => Ok(StringHandle(self._read::<u16>()? as usize)),
+		}
+	}
+
+	pub fn read_guid_handle(&mut self) -> Result<GuidHandle, TableReaderError> {
+		match self.wide_guid {
+			true => Ok(GuidHandle(self._read::<u32>()? as usize)),
+			false => Ok(GuidHandle(self._read::<u16>()? as usize)),
+		}
+	}
+
+	pub fn read_blob_handle(&mut self) -> Result<BlobHandle, TableReaderError> {
+		match self.wide_string {
+			true => Ok(BlobHandle(self._read::<u32>()? as usize)),
+			false => Ok(BlobHandle(self._read::<u16>()? as usize)),
+		}
 	}
 }
 
