@@ -144,7 +144,7 @@ pub struct Tables {
 	pub type_ref: Table<TypeRef>,
 	pub type_def: Table<TypeDef>,
 	pub field: Table<Field>,
-	//pub method_def: Table<MethodDef>,
+	pub method_def: Table<MethodDef>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -214,7 +214,7 @@ impl<'data> TableReader<'data> {
 		let present_tables = br.read::<u64>().ok_or_else(|| {
 			TableReaderError::BadImageFormat("Invalid metadata header".to_string())
 		})?;
-		let sorted_tables = br.read::<u64>().ok_or_else(|| {
+		let _sorted_tables = br.read::<u64>().ok_or_else(|| {
 			TableReaderError::BadImageFormat("Invalid metadata header".to_string())
 		})?;
 
@@ -280,7 +280,7 @@ impl<'data> TableReader<'data> {
 			type_ref: self.read_table::<TypeRef>()?,
 			type_def: self.read_table::<TypeDef>()?,
 			field: self.read_table::<Field>()?,
-			//method_def: self.read_table::<MethodDef>()?,
+			method_def: self.read_table::<MethodDef>()?,
 		})
 	}
 

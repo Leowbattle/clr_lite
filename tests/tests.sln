@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeDefTests", "metadata\ta
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FieldTests", "metadata\tables\FieldTests\FieldTests.csproj", "{E4F2056B-AD6C-422D-AF53-271276510947}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MethodDefTests", "metadata\tables\MethodDefTests\MethodDefTests.csproj", "{1935B48A-D43F-4243-BF80-18976A6078AE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -73,6 +75,18 @@ Global
 		{E4F2056B-AD6C-422D-AF53-271276510947}.Release|x64.Build.0 = Release|Any CPU
 		{E4F2056B-AD6C-422D-AF53-271276510947}.Release|x86.ActiveCfg = Release|Any CPU
 		{E4F2056B-AD6C-422D-AF53-271276510947}.Release|x86.Build.0 = Release|Any CPU
+		{1935B48A-D43F-4243-BF80-18976A6078AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1935B48A-D43F-4243-BF80-18976A6078AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1935B48A-D43F-4243-BF80-18976A6078AE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1935B48A-D43F-4243-BF80-18976A6078AE}.Debug|x64.Build.0 = Debug|Any CPU
+		{1935B48A-D43F-4243-BF80-18976A6078AE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1935B48A-D43F-4243-BF80-18976A6078AE}.Debug|x86.Build.0 = Debug|Any CPU
+		{1935B48A-D43F-4243-BF80-18976A6078AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1935B48A-D43F-4243-BF80-18976A6078AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1935B48A-D43F-4243-BF80-18976A6078AE}.Release|x64.ActiveCfg = Release|Any CPU
+		{1935B48A-D43F-4243-BF80-18976A6078AE}.Release|x64.Build.0 = Release|Any CPU
+		{1935B48A-D43F-4243-BF80-18976A6078AE}.Release|x86.ActiveCfg = Release|Any CPU
+		{1935B48A-D43F-4243-BF80-18976A6078AE}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -82,6 +96,7 @@ Global
 		{017904B9-E884-4295-AA58-2FED362AF69E} = {28E83D8E-404E-47B7-BACA-49BE3BB5D3FE}
 		{65F2707C-370F-44C2-9E6A-47EA09D357A7} = {28E83D8E-404E-47B7-BACA-49BE3BB5D3FE}
 		{E4F2056B-AD6C-422D-AF53-271276510947} = {28E83D8E-404E-47B7-BACA-49BE3BB5D3FE}
+		{1935B48A-D43F-4243-BF80-18976A6078AE} = {28E83D8E-404E-47B7-BACA-49BE3BB5D3FE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D9A2A218-62E6-4E6E-BAEE-6CEBD7780EBA}

@@ -1,3 +1,4 @@
+///! ECMA-335 II.22.15
 use crate::metadata::*;
 
 #[derive(Debug)]
@@ -22,12 +23,13 @@ impl From<usize> for FieldHandle {
 	}
 }
 
+/// ECMA-335 II.23.1.5
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct FieldAttributes {
 	pub visibility: FieldVisibility,
-	pub r#static: bool,
+	pub is_static: bool,
 	pub readonly: bool,
-	pub r#const: bool,
+	pub is_const: bool,
 	pub not_serialised: bool,
 	pub special_name: bool,
 	pub pinvoke_impl: bool,
@@ -55,9 +57,9 @@ impl FieldAttributes {
 					)))
 				}
 			},
-			r#static: raw & 0x10 == 0x10,
+			is_static: raw & 0x10 == 0x10,
 			readonly: raw & 0x20 == 0x20,
-			r#const: raw & 0x40 == 0x40,
+			is_const: raw & 0x40 == 0x40,
 			not_serialised: raw & 0x80 == 0x80,
 			special_name: raw & 0x200 == 0x200,
 			pinvoke_impl: raw & 0x2000 == 0x2000,
@@ -125,9 +127,9 @@ mod tests {
 			FieldVisibility::Public
 		);
 
-		assert!(fields["Static"].attributes.r#static);
+		assert!(fields["Static"].attributes.is_static);
 		assert!(fields["Readonly"].attributes.readonly);
-		assert!(fields["Const"].attributes.r#const);
+		assert!(fields["Const"].attributes.is_const);
 		assert!(fields["Marshalled"].attributes.has_field_marshal);
 	}
 }

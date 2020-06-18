@@ -1,3 +1,4 @@
+///! ECMA-335 II.22.37
 use crate::metadata::*;
 
 #[derive(Debug)]
@@ -25,12 +26,13 @@ impl From<usize> for TypeDefHandle {
 	}
 }
 
+/// ECMA-335 II.23.1.15
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct TypeAttributes {
 	pub visibility: TypeVisibility,
 	pub layout: TypeLayout,
 	pub semantics: TypeSemantics,
-	pub r#abstract: bool,
+	pub is_abstract: bool,
 	pub sealed: bool,
 	pub special_name: bool,
 	pub imported: bool,
@@ -82,7 +84,7 @@ impl TypeAttributes {
 					)))
 				}
 			},
-			r#abstract: raw & 0x80 == 0x80,
+			is_abstract: raw & 0x80 == 0x80,
 			sealed: raw & 0x100 == 0x100,
 			special_name: raw & 0x400 == 0x400,
 			imported: raw & 0x1000 == 0x1000,
@@ -215,7 +217,7 @@ mod tests {
 			TypeDefOrRefHandle::TypeDefHandle(type_defs["Class1"].handle)
 		);
 
-		assert!(type_defs["Abstract"].def.attributes.r#abstract);
+		assert!(type_defs["Abstract"].def.attributes.is_abstract);
 		assert!(type_defs["Sealed"].def.attributes.sealed);
 		assert!(
 			!type_defs["NotBeforeFieldInit"]
