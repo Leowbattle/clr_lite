@@ -20,6 +20,7 @@ impl From<usize> for ImplMapHandle {
 
 impl TableRow for ImplMap {
 	type Handle = ImplMapHandle;
+	const TYPE: TableType = TableType::ImplMap;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<ImplMap, TableReaderError> {
 		unimplemented!()

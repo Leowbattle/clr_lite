@@ -20,6 +20,7 @@ impl From<usize> for ConstantHandle {
 
 impl TableRow for Constant {
 	type Handle = ConstantHandle;
+	const TYPE: TableType = TableType::Constant;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<Constant, TableReaderError> {
 		unimplemented!()

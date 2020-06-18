@@ -20,6 +20,7 @@ impl From<usize> for DeclSecurityHandle {
 
 impl TableRow for DeclSecurity {
 	type Handle = DeclSecurityHandle;
+	const TYPE: TableType = TableType::DeclSecurity;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<DeclSecurity, TableReaderError> {
 		unimplemented!()

@@ -20,6 +20,7 @@ impl From<usize> for MemberRefHandle {
 
 impl TableRow for MemberRef {
 	type Handle = MemberRefHandle;
+	const TYPE: TableType = TableType::MemberRef;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<MemberRef, TableReaderError> {
 		unimplemented!()

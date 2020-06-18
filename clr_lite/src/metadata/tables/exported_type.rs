@@ -20,6 +20,7 @@ impl From<usize> for ExportedTypeHandle {
 
 impl TableRow for ExportedType {
 	type Handle = ExportedTypeHandle;
+	const TYPE: TableType = TableType::ExportedType;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<ExportedType, TableReaderError> {
 		unimplemented!()

@@ -20,6 +20,7 @@ impl From<usize> for EventHandle {
 
 impl TableRow for Event {
 	type Handle = EventHandle;
+	const TYPE: TableType = TableType::Event;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<Event, TableReaderError> {
 		unimplemented!()

@@ -20,6 +20,7 @@ impl From<usize> for AssemblyRefHandle {
 
 impl TableRow for AssemblyRef {
 	type Handle = AssemblyRefHandle;
+	const TYPE: TableType = TableType::AssemblyRef;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<AssemblyRef, TableReaderError> {
 		unimplemented!()

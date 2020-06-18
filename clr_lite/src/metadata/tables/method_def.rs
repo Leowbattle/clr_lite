@@ -20,6 +20,7 @@ impl From<usize> for MethodDefHandle {
 
 impl TableRow for MethodDef {
 	type Handle = MethodDefHandle;
+	const TYPE: TableType = TableType::MethodDef;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<MethodDef, TableReaderError> {
 		unimplemented!()

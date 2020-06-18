@@ -20,6 +20,7 @@ impl From<usize> for GenericParamHandle {
 
 impl TableRow for GenericParam {
 	type Handle = GenericParamHandle;
+	const TYPE: TableType = TableType::GenericParam;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<GenericParam, TableReaderError> {
 		unimplemented!()

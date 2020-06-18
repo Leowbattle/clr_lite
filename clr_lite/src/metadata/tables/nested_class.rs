@@ -20,6 +20,7 @@ impl From<usize> for NestedClassHandle {
 
 impl TableRow for NestedClass {
 	type Handle = NestedClassHandle;
+	const TYPE: TableType = TableType::NestedClass;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<NestedClass, TableReaderError> {
 		unimplemented!()

@@ -20,6 +20,7 @@ impl From<usize> for CustomAttributeHandle {
 
 impl TableRow for CustomAttribute {
 	type Handle = CustomAttributeHandle;
+	const TYPE: TableType = TableType::CustomAttribute;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<CustomAttribute, TableReaderError> {
 		unimplemented!()

@@ -20,6 +20,7 @@ impl From<usize> for ClassLayoutHandle {
 
 impl TableRow for ClassLayout {
 	type Handle = ClassLayoutHandle;
+	const TYPE: TableType = TableType::ClassLayout;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<ClassLayout, TableReaderError> {
 		unimplemented!()

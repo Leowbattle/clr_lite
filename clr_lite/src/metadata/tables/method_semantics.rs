@@ -20,6 +20,7 @@ impl From<usize> for MethodSemanticsHandle {
 
 impl TableRow for MethodSemantics {
 	type Handle = MethodSemanticsHandle;
+	const TYPE: TableType = TableType::MethodSemantics;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<MethodSemantics, TableReaderError> {
 		unimplemented!()

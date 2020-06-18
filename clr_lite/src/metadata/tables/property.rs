@@ -20,6 +20,7 @@ impl From<usize> for PropertyHandle {
 
 impl TableRow for Property {
 	type Handle = PropertyHandle;
+	const TYPE: TableType = TableType::Property;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<Property, TableReaderError> {
 		unimplemented!()

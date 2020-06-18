@@ -20,6 +20,7 @@ impl From<usize> for StandaloneSigHandle {
 
 impl TableRow for StandaloneSig {
 	type Handle = StandaloneSigHandle;
+	const TYPE: TableType = TableType::StandaloneSig;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<StandaloneSig, TableReaderError> {
 		unimplemented!()

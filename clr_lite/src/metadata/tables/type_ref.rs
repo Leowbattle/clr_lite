@@ -24,6 +24,7 @@ impl From<usize> for TypeRefHandle {
 
 impl TableRow for TypeRef {
 	type Handle = TypeRefHandle;
+	const TYPE: TableType = TableType::TypeRef;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<TypeRef, TableReaderError> {
 		Ok(TypeRef {

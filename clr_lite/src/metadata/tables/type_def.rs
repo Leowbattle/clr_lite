@@ -142,6 +142,7 @@ pub enum TypeStringFormat {
 
 impl TableRow for TypeDef {
 	type Handle = TypeDefHandle;
+	const TYPE: TableType = TableType::TypeDef;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<TypeDef, TableReaderError> {
 		Ok(TypeDef {

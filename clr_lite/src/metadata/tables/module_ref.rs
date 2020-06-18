@@ -20,7 +20,7 @@ impl From<usize> for ModuleRefHandle {
 
 impl TableRow for ModuleRef {
 	type Handle = ModuleRefHandle;
-
+	const TYPE: TableType = TableType::ModuleRef;
 	fn read_row(reader: &mut TableReader<'_>) -> Result<ModuleRef, TableReaderError> {
 		unimplemented!()
 	}

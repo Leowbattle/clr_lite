@@ -20,6 +20,7 @@ impl From<usize> for FileHandle {
 
 impl TableRow for File {
 	type Handle = FileHandle;
+	const TYPE: TableType = TableType::File;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<File, TableReaderError> {
 		unimplemented!()

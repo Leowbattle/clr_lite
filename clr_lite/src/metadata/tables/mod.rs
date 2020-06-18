@@ -144,10 +144,12 @@ pub struct Tables {
 	pub type_ref: Table<TypeRef>,
 	pub type_def: Table<TypeDef>,
 	pub field: Table<Field>,
+	//pub method_def: Table<MethodDef>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
 	type Handle: Into<usize>;
+	const TYPE: TableType;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<Self, TableReaderError>;
 }
@@ -259,27 +261,26 @@ impl<'data> TableReader<'data> {
 		.read_tables()
 	}
 
-	fn read_tables(mut self) -> Result<Tables, TableReaderError> {
-		macro_rules! get_table {
-			($type:ident) => {{
-				let count = self.row_counts[TableType::$type as usize];
-				let mut table = Vec::with_capacity(count);
+	fn read_table<T: TableRow>(&mut self) -> Result<Table<T>, TableReaderError> {
+		let count = self.row_counts[T::TYPE as usize];
+		let mut table = Vec::with_capacity(count);
 
-				// TODO: Investigate why assert_eq!(table.capacity(), count) fails
-				// assert_eq!(table.capacity(), count);
+		// TODO: Investigate why assert_eq!(table.capacity(), count) fails
+		// assert_eq!(table.capacity(), count);
 
-				for _ in 0..count {
-					table.push($type::read_row(&mut self)?);
-					}
-				Table::<$type>(table.into_boxed_slice())
-				}};
+		for _ in 0..count {
+			table.push(T::read_row(self)?);
 		}
+		Ok(Table::<T>(table.into_boxed_slice()))
+	}
 
+	fn read_tables(mut self) -> Result<Tables, TableReaderError> {
 		Ok(Tables {
-			module: get_table!(Module),
-			type_ref: get_table!(TypeRef),
-			type_def: get_table!(TypeDef),
-			field: get_table!(Field),
+			module: self.read_table::<Module>()?,
+			type_ref: self.read_table::<TypeRef>()?,
+			type_def: self.read_table::<TypeDef>()?,
+			field: self.read_table::<Field>()?,
+			//method_def: self.read_table::<MethodDef>()?,
 		})
 	}
 
@@ -287,6 +288,10 @@ impl<'data> TableReader<'data> {
 		self.reader
 			.read::<T>()
 			.ok_or_else(|| TableReaderError::BadImageFormat("Unexpected EOF".to_string()))
+	}
+
+	pub fn read_rva(&mut self) -> Result<Rva, TableReaderError> {
+		self._read::<Rva>()
 	}
 
 	pub fn read_field_handle(&mut self) -> Result<FieldHandle, TableReaderError> {
@@ -300,6 +305,13 @@ impl<'data> TableReader<'data> {
 		match self.wide_table_handles[TableType::MethodDef as usize] {
 			true => Ok(MethodDefHandle(self._read::<u32>()? as usize)),
 			false => Ok(MethodDefHandle(self._read::<u16>()? as usize)),
+		}
+	}
+
+	pub fn read_param_handle(&mut self) -> Result<ParamHandle, TableReaderError> {
+		match self.wide_table_handles[TableType::Param as usize] {
+			true => Ok(ParamHandle(self._read::<u32>()? as usize)),
+			false => Ok(ParamHandle(self._read::<u16>()? as usize)),
 		}
 	}
 

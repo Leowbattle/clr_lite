@@ -20,6 +20,7 @@ impl From<usize> for FieldLayoutHandle {
 
 impl TableRow for FieldLayout {
 	type Handle = FieldLayoutHandle;
+	const TYPE: TableType = TableType::FieldLayout;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<FieldLayout, TableReaderError> {
 		unimplemented!()

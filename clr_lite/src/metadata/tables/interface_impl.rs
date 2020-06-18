@@ -20,6 +20,7 @@ impl From<usize> for InterfaceImplHandle {
 
 impl TableRow for InterfaceImpl {
 	type Handle = InterfaceImplHandle;
+	const TYPE: TableType = TableType::InterfaceImpl;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<InterfaceImpl, TableReaderError> {
 		unimplemented!()

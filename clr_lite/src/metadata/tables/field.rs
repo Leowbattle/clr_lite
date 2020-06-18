@@ -82,6 +82,7 @@ pub enum FieldVisibility {
 
 impl TableRow for Field {
 	type Handle = FieldHandle;
+	const TYPE: TableType = TableType::Field;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<Field, TableReaderError> {
 		Ok(Field {

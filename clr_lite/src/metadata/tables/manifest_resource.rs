@@ -20,6 +20,7 @@ impl From<usize> for ManifestResourceHandle {
 
 impl TableRow for ManifestResource {
 	type Handle = ManifestResourceHandle;
+	const TYPE: TableType = TableType::ManifestResource;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<ManifestResource, TableReaderError> {
 		unimplemented!()

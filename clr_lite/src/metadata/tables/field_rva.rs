@@ -20,6 +20,7 @@ impl From<usize> for FieldRvaHandle {
 
 impl TableRow for FieldRva {
 	type Handle = FieldRvaHandle;
+	const TYPE: TableType = TableType::FieldRva;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<FieldRva, TableReaderError> {
 		unimplemented!()

@@ -20,6 +20,7 @@ impl From<usize> for MethodSpecHandle {
 
 impl TableRow for MethodSpec {
 	type Handle = MethodSpecHandle;
+	const TYPE: TableType = TableType::MethodSpec;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<MethodSpec, TableReaderError> {
 		unimplemented!()

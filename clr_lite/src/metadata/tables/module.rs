@@ -23,6 +23,7 @@ impl From<usize> for ModuleHandle {
 
 impl TableRow for Module {
 	type Handle = ModuleHandle;
+	const TYPE: TableType = TableType::Module;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<Module, TableReaderError> {
 		let _generation = reader._read::<u16>();

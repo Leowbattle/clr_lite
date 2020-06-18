@@ -20,6 +20,7 @@ impl From<usize> for AssemblyRefOsHandle {
 
 impl TableRow for AssemblyRefOs {
 	type Handle = AssemblyRefOsHandle;
+	const TYPE: TableType = TableType::AssemblyRefOs;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<AssemblyRefOs, TableReaderError> {
 		unimplemented!()
