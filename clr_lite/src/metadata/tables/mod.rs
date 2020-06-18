@@ -24,8 +24,8 @@ use crate::metadata::*;
 pub struct Table<T: TableRow>(Box<[T]>);
 
 impl<T: TableRow> Table<T> {
-	pub fn rows(&self) -> std::slice::Iter<T> {
-		self.0.iter()
+	pub fn rows(&self) -> &[T] {
+		&self.0
 	}
 }
 

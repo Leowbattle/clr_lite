@@ -34,3 +34,23 @@ impl TableRow for Module {
 		Ok(Module { name, version })
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::metadata::*;
+
+	#[test]
+	fn test_module() {
+		let data =
+			include_bytes!("../../../../tests/EmptyExe/bin/Debug/netcoreapp3.1/EmptyExe.dll");
+		let metadata = Metadata::read(data).unwrap();
+
+		assert_eq!(
+			metadata
+				.strings()
+				.get(metadata.tables().module[0.into()].name),
+			Some("EmptyExe.dll")
+		);
+	}
+}

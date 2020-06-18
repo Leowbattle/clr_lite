@@ -33,3 +33,24 @@ impl TableRow for TypeRef {
 		})
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::metadata::*;
+
+	#[test]
+	fn test_type_ref() {
+		let data = include_bytes!(
+			"../../../../tests/metadata/tables/TypeRefTests/bin/Debug/netcoreapp3.1/TypeRefTests.dll"
+		);
+		let metadata = Metadata::read(data).unwrap();
+
+		assert!(metadata
+			.tables()
+			.type_ref
+			.rows()
+			.iter()
+			.any(|r| metadata.strings().get(r.name) == Some("Console")));
+	}
+}
