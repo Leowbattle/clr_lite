@@ -14,7 +14,7 @@ impl From<FieldMarshalHandle> for usize {
 
 impl From<usize> for FieldMarshalHandle {
 	fn from(x: usize) -> FieldMarshalHandle {
-		FieldMarshalHandle(x)
+		FieldMarshalHandle(x + 1)
 	}
 }
 

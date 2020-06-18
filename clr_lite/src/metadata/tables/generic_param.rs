@@ -14,7 +14,7 @@ impl From<GenericParamHandle> for usize {
 
 impl From<usize> for GenericParamHandle {
 	fn from(x: usize) -> GenericParamHandle {
-		GenericParamHandle(x)
+		GenericParamHandle(x + 1)
 	}
 }
 

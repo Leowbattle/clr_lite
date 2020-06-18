@@ -14,7 +14,7 @@ impl From<PropertyHandle> for usize {
 
 impl From<usize> for PropertyHandle {
 	fn from(x: usize) -> PropertyHandle {
-		PropertyHandle(x)
+		PropertyHandle(x + 1)
 	}
 }
 

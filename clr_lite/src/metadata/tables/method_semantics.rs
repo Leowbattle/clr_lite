@@ -14,7 +14,7 @@ impl From<MethodSemanticsHandle> for usize {
 
 impl From<usize> for MethodSemanticsHandle {
 	fn from(x: usize) -> MethodSemanticsHandle {
-		MethodSemanticsHandle(x)
+		MethodSemanticsHandle(x + 1)
 	}
 }
 

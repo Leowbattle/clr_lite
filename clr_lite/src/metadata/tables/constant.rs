@@ -14,7 +14,7 @@ impl From<ConstantHandle> for usize {
 
 impl From<usize> for ConstantHandle {
 	fn from(x: usize) -> ConstantHandle {
-		ConstantHandle(x)
+		ConstantHandle(x + 1)
 	}
 }
 

@@ -14,7 +14,7 @@ impl From<ModuleRefHandle> for usize {
 
 impl From<usize> for ModuleRefHandle {
 	fn from(x: usize) -> ModuleRefHandle {
-		ModuleRefHandle(x)
+		ModuleRefHandle(x + 1)
 	}
 }
 

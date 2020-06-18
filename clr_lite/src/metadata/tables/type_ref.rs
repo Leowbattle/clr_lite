@@ -19,7 +19,7 @@ impl From<TypeRefHandle> for usize {
 
 impl From<usize> for TypeRefHandle {
 	fn from(x: usize) -> TypeRefHandle {
-		TypeRefHandle(x)
+		TypeRefHandle(x + 1)
 	}
 }
 

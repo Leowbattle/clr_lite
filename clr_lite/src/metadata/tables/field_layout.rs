@@ -14,7 +14,7 @@ impl From<FieldLayoutHandle> for usize {
 
 impl From<usize> for FieldLayoutHandle {
 	fn from(x: usize) -> FieldLayoutHandle {
-		FieldLayoutHandle(x)
+		FieldLayoutHandle(x + 1)
 	}
 }
 

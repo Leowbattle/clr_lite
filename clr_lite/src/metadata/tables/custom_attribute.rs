@@ -14,7 +14,7 @@ impl From<CustomAttributeHandle> for usize {
 
 impl From<usize> for CustomAttributeHandle {
 	fn from(x: usize) -> CustomAttributeHandle {
-		CustomAttributeHandle(x)
+		CustomAttributeHandle(x + 1)
 	}
 }
 

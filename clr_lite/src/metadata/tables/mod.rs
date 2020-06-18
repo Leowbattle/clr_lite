@@ -135,7 +135,7 @@ impl<T: TableRow> std::ops::Index<T::Handle> for Table<T> {
 	type Output = T;
 
 	fn index(&self, h: T::Handle) -> &Self::Output {
-		&self.0[h.into()]
+		&self.0[h.into() - 1]
 	}
 }
 
@@ -146,10 +146,11 @@ pub struct Tables {
 	pub field: Table<Field>,
 	pub method_def: Table<MethodDef>,
 	pub param: Table<Param>,
+	pub interface_impl: Table<InterfaceImpl>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
-	type Handle: Into<usize>;
+	type Handle: Into<usize> + Copy;
 	const TYPE: TableType;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<Self, TableReaderError>;
@@ -283,6 +284,7 @@ impl<'data> TableReader<'data> {
 			field: self.read_table::<Field>()?,
 			method_def: self.read_table::<MethodDef>()?,
 			param: self.read_table::<Param>()?,
+			interface_impl: self.read_table::<InterfaceImpl>()?,
 		})
 	}
 
@@ -294,6 +296,13 @@ impl<'data> TableReader<'data> {
 
 	pub fn read_rva(&mut self) -> Result<Rva, TableReaderError> {
 		self._read::<Rva>()
+	}
+
+	pub fn read_type_def_handle(&mut self) -> Result<TypeDefHandle, TableReaderError> {
+		match self.wide_table_handles[TableType::TypeDef as usize] {
+			true => Ok(TypeDefHandle(self._read::<u32>()? as usize)),
+			false => Ok(TypeDefHandle(self._read::<u16>()? as usize)),
+		}
 	}
 
 	pub fn read_field_handle(&mut self) -> Result<FieldHandle, TableReaderError> {
@@ -345,7 +354,8 @@ impl<'data> TableReader<'data> {
 		};
 
 		let tag = data & TypeDefOrRefHandle::TAG_MASK;
-		let index = (data & !TypeDefOrRefHandle::TAG_MASK) >> (TypeDefOrRefHandle::TAG_MASK);
+		let index =
+			(data & !TypeDefOrRefHandle::TAG_MASK) >> (TypeDefOrRefHandle::TAG_MASK.count_ones());
 
 		Ok(match tag {
 			0 => TypeDefOrRefHandle::TypeDefHandle(TypeDefHandle(index)),
@@ -367,7 +377,8 @@ impl<'data> TableReader<'data> {
 		};
 
 		let tag = data & ResolutionScopeHandle::TAG_MASK;
-		let index = (data & !ResolutionScopeHandle::TAG_MASK) >> (ResolutionScopeHandle::TAG_MASK);
+		let index = (data & !ResolutionScopeHandle::TAG_MASK)
+			>> (ResolutionScopeHandle::TAG_MASK.count_ones());
 
 		Ok(match tag {
 			0 => ResolutionScopeHandle::ModuleHandle(ModuleHandle(index)),

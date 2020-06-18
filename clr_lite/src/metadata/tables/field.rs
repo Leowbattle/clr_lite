@@ -19,7 +19,7 @@ impl From<FieldHandle> for usize {
 
 impl From<usize> for FieldHandle {
 	fn from(x: usize) -> FieldHandle {
-		FieldHandle(x)
+		FieldHandle(x + 1)
 	}
 }
 

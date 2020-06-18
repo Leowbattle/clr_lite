@@ -14,7 +14,7 @@ impl From<TypeSpecHandle> for usize {
 
 impl From<usize> for TypeSpecHandle {
 	fn from(x: usize) -> TypeSpecHandle {
-		TypeSpecHandle(x)
+		TypeSpecHandle(x + 1)
 	}
 }
 

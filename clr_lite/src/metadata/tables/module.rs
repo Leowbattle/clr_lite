@@ -18,7 +18,7 @@ impl From<ModuleHandle> for usize {
 
 impl From<usize> for ModuleHandle {
 	fn from(x: usize) -> ModuleHandle {
-		ModuleHandle(x)
+		ModuleHandle(x + 1)
 	}
 }
 

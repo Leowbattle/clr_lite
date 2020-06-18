@@ -19,7 +19,7 @@ impl From<ParamHandle> for usize {
 
 impl From<usize> for ParamHandle {
 	fn from(x: usize) -> ParamHandle {
-		ParamHandle(x)
+		ParamHandle(x + 1)
 	}
 }
 

@@ -14,7 +14,7 @@ impl From<MemberRefHandle> for usize {
 
 impl From<usize> for MemberRefHandle {
 	fn from(x: usize) -> MemberRefHandle {
-		MemberRefHandle(x)
+		MemberRefHandle(x + 1)
 	}
 }
 

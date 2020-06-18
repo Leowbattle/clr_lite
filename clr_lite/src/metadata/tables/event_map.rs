@@ -14,7 +14,7 @@ impl From<EventMapHandle> for usize {
 
 impl From<usize> for EventMapHandle {
 	fn from(x: usize) -> EventMapHandle {
-		EventMapHandle(x)
+		EventMapHandle(x + 1)
 	}
 }
 

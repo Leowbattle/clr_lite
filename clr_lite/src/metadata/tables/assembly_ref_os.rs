@@ -14,7 +14,7 @@ impl From<AssemblyRefOsHandle> for usize {
 
 impl From<usize> for AssemblyRefOsHandle {
 	fn from(x: usize) -> AssemblyRefOsHandle {
-		AssemblyRefOsHandle(x)
+		AssemblyRefOsHandle(x + 1)
 	}
 }
 

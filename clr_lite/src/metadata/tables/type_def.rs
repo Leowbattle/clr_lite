@@ -22,7 +22,7 @@ impl From<TypeDefHandle> for usize {
 
 impl From<usize> for TypeDefHandle {
 	fn from(x: usize) -> TypeDefHandle {
-		TypeDefHandle(x)
+		TypeDefHandle(x + 1)
 	}
 }
 

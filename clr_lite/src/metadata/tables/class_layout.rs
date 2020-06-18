@@ -14,7 +14,7 @@ impl From<ClassLayoutHandle> for usize {
 
 impl From<usize> for ClassLayoutHandle {
 	fn from(x: usize) -> ClassLayoutHandle {
-		ClassLayoutHandle(x)
+		ClassLayoutHandle(x + 1)
 	}
 }
 

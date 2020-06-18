@@ -14,7 +14,7 @@ impl From<StandaloneSigHandle> for usize {
 
 impl From<usize> for StandaloneSigHandle {
 	fn from(x: usize) -> StandaloneSigHandle {
-		StandaloneSigHandle(x)
+		StandaloneSigHandle(x + 1)
 	}
 }
 

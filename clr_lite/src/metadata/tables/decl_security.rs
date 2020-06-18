@@ -14,7 +14,7 @@ impl From<DeclSecurityHandle> for usize {
 
 impl From<usize> for DeclSecurityHandle {
 	fn from(x: usize) -> DeclSecurityHandle {
-		DeclSecurityHandle(x)
+		DeclSecurityHandle(x + 1)
 	}
 }
 

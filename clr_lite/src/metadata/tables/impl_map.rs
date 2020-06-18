@@ -14,7 +14,7 @@ impl From<ImplMapHandle> for usize {
 
 impl From<usize> for ImplMapHandle {
 	fn from(x: usize) -> ImplMapHandle {
-		ImplMapHandle(x)
+		ImplMapHandle(x + 1)
 	}
 }
 

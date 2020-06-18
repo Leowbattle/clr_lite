@@ -14,7 +14,7 @@ impl From<NestedClassHandle> for usize {
 
 impl From<usize> for NestedClassHandle {
 	fn from(x: usize) -> NestedClassHandle {
-		NestedClassHandle(x)
+		NestedClassHandle(x + 1)
 	}
 }
 

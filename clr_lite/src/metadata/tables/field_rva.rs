@@ -14,7 +14,7 @@ impl From<FieldRvaHandle> for usize {
 
 impl From<usize> for FieldRvaHandle {
 	fn from(x: usize) -> FieldRvaHandle {
-		FieldRvaHandle(x)
+		FieldRvaHandle(x + 1)
 	}
 }
 

@@ -14,7 +14,7 @@ impl From<ManifestResourceHandle> for usize {
 
 impl From<usize> for ManifestResourceHandle {
 	fn from(x: usize) -> ManifestResourceHandle {
-		ManifestResourceHandle(x)
+		ManifestResourceHandle(x+1)
 	}
 }
 

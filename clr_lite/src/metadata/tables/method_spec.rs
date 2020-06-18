@@ -14,7 +14,7 @@ impl From<MethodSpecHandle> for usize {
 
 impl From<usize> for MethodSpecHandle {
 	fn from(x: usize) -> MethodSpecHandle {
-		MethodSpecHandle(x)
+		MethodSpecHandle(x + 1)
 	}
 }
 

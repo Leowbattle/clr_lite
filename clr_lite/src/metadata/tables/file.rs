@@ -14,7 +14,7 @@ impl From<FileHandle> for usize {
 
 impl From<usize> for FileHandle {
 	fn from(x: usize) -> FileHandle {
-		FileHandle(x)
+		FileHandle(x + 1)
 	}
 }
 

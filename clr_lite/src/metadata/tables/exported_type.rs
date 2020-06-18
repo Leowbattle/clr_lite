@@ -14,7 +14,7 @@ impl From<ExportedTypeHandle> for usize {
 
 impl From<usize> for ExportedTypeHandle {
 	fn from(x: usize) -> ExportedTypeHandle {
-		ExportedTypeHandle(x)
+		ExportedTypeHandle(x + 1)
 	}
 }
 

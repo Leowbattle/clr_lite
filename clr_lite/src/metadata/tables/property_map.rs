@@ -14,7 +14,7 @@ impl From<PropertyMapHandle> for usize {
 
 impl From<usize> for PropertyMapHandle {
 	fn from(x: usize) -> PropertyMapHandle {
-		PropertyMapHandle(x)
+		PropertyMapHandle(x + 1)
 	}
 }
 

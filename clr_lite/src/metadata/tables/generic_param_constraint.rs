@@ -14,7 +14,7 @@ impl From<GenericParamConstraintHandle> for usize {
 
 impl From<usize> for GenericParamConstraintHandle {
 	fn from(x: usize) -> GenericParamConstraintHandle {
-		GenericParamConstraintHandle(x)
+		GenericParamConstraintHandle(x+1)
 	}
 }
 

@@ -14,7 +14,7 @@ impl From<AssemblyProcessorHandle> for usize {
 
 impl From<usize> for AssemblyProcessorHandle {
 	fn from(x: usize) -> AssemblyProcessorHandle {
-		AssemblyProcessorHandle(x)
+		AssemblyProcessorHandle(x + 1)
 	}
 }
 
