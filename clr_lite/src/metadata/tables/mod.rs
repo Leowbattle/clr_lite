@@ -147,6 +147,7 @@ pub struct Tables {
 	pub method_def: Table<MethodDef>,
 	pub param: Table<Param>,
 	pub interface_impl: Table<InterfaceImpl>,
+	pub member_ref: Table<MemberRef>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -182,6 +183,7 @@ pub struct TableReader<'data> {
 	wide_blob: bool,
 
 	wide_type_def_or_ref: bool,
+	wide_member_ref_parent: bool,
 	wide_resolution_scope: bool,
 }
 
@@ -254,6 +256,11 @@ impl<'data> TableReader<'data> {
 				TypeDefOrRefHandle::TABLES,
 				&row_counts,
 			),
+			wide_member_ref_parent: is_coded_index_wide(
+				MemberRefParentHandle::LARGE_ROW_SIZE,
+				MemberRefParentHandle::TABLES,
+				&row_counts,
+			),
 			wide_resolution_scope: is_coded_index_wide(
 				ResolutionScopeHandle::LARGE_ROW_SIZE,
 				ResolutionScopeHandle::TABLES,
@@ -264,13 +271,9 @@ impl<'data> TableReader<'data> {
 	}
 
 	fn read_table<T: TableRow>(&mut self) -> Result<Table<T>, TableReaderError> {
-		let count = self.row_counts[T::TYPE as usize];
-		let mut table = Vec::with_capacity(count);
+		let mut table = Vec::with_capacity(self.row_counts[T::TYPE as usize]);
 
-		// TODO: Investigate why assert_eq!(table.capacity(), count) fails
-		// assert_eq!(table.capacity(), count);
-
-		for _ in 0..count {
+		for _ in 0..table.capacity() {
 			table.push(T::read_row(self)?);
 		}
 		Ok(Table::<T>(table.into_boxed_slice()))
@@ -285,6 +288,7 @@ impl<'data> TableReader<'data> {
 			method_def: self.read_table::<MethodDef>()?,
 			param: self.read_table::<Param>()?,
 			interface_impl: self.read_table::<InterfaceImpl>()?,
+			member_ref: self.read_table::<MemberRef>()?,
 		})
 	}
 
@@ -364,6 +368,33 @@ impl<'data> TableReader<'data> {
 			_ => {
 				return Err(TableReaderError::BadImageFormat(format!(
 					"Invalid TypeDefOrRef tag {}",
+					tag
+				)))
+			}
+		})
+	}
+
+	pub fn read_member_ref_parent_handle(
+		&mut self,
+	) -> Result<MemberRefParentHandle, TableReaderError> {
+		let data = match self.wide_member_ref_parent {
+			true => self._read::<u32>()? as usize,
+			false => self._read::<u16>()? as usize,
+		};
+
+		let tag = data & MemberRefParentHandle::TAG_MASK;
+		let index = (data & !MemberRefParentHandle::TAG_MASK)
+			>> (MemberRefParentHandle::TAG_MASK.count_ones());
+
+		Ok(match tag {
+			0 => MemberRefParentHandle::TypeDefHandle(TypeDefHandle(index)),
+			1 => MemberRefParentHandle::TypeRefHandle(TypeRefHandle(index)),
+			2 => MemberRefParentHandle::ModuleRefHandle(ModuleRefHandle(index)),
+			3 => MemberRefParentHandle::MethodDefHandle(MethodDefHandle(index)),
+			4 => MemberRefParentHandle::TypeSpecHandle(TypeSpecHandle(index)),
+			_ => {
+				return Err(TableReaderError::BadImageFormat(format!(
+					"Invalid MemberRefParent tag {}",
 					tag
 				)))
 			}
