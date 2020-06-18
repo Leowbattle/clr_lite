@@ -1,0 +1,27 @@
+use crate::metadata::*;
+
+#[derive(Debug)]
+pub struct FieldRva {}
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct FieldRvaHandle(pub(crate) usize);
+
+impl From<FieldRvaHandle> for usize {
+	fn from(h: FieldRvaHandle) -> usize {
+		h.0
+	}
+}
+
+impl From<usize> for FieldRvaHandle {
+	fn from(x: usize) -> FieldRvaHandle {
+		FieldRvaHandle(x)
+	}
+}
+
+impl TableRow for FieldRva {
+	type Handle = FieldRvaHandle;
+
+	fn read_row(reader: &mut TableReader<'_>) -> Result<FieldRva, TableReaderError> {
+		unimplemented!()
+	}
+}

@@ -1,10 +1,7 @@
 use crate::metadata::*;
 
 #[derive(Debug)]
-pub struct AssemblyRef {
-	pub name: StringHandle,
-	pub version: GuidHandle,
-}
+pub struct AssemblyRef {}
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct AssemblyRefHandle(pub(crate) usize);

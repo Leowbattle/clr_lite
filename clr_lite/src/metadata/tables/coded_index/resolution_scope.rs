@@ -1,11 +1,11 @@
 use crate::metadata::*;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ResolutionScopeHandle {
-	Module(ModuleHandle),
-	ModuleRef(ModuleRefHandle),
-	AssemblyRef(AssemblyRefHandle),
-	TypeRef(TypeRefHandle),
+	ModuleHandle(ModuleHandle),
+	ModuleRefHandle(ModuleRefHandle),
+	AssemblyRefHandle(AssemblyRefHandle),
+	TypeRefHandle(TypeRefHandle),
 }
 
 impl ResolutionScopeHandle {
