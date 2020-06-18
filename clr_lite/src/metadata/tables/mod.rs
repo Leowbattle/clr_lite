@@ -145,6 +145,7 @@ pub struct Tables {
 	pub type_def: Table<TypeDef>,
 	pub field: Table<Field>,
 	pub method_def: Table<MethodDef>,
+	pub param: Table<Param>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -281,6 +282,7 @@ impl<'data> TableReader<'data> {
 			type_def: self.read_table::<TypeDef>()?,
 			field: self.read_table::<Field>()?,
 			method_def: self.read_table::<MethodDef>()?,
+			param: self.read_table::<Param>()?,
 		})
 	}
 

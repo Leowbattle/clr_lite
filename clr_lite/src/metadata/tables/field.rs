@@ -98,7 +98,6 @@ impl TableRow for Field {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::metadata::*;
 
 	use std::collections::HashMap;
 
