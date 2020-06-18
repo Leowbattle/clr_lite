@@ -143,6 +143,7 @@ pub struct Tables {
 	pub module: Table<Module>,
 	pub type_ref: Table<TypeRef>,
 	pub type_def: Table<TypeDef>,
+	pub field: Table<Field>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -278,6 +279,7 @@ impl<'data> TableReader<'data> {
 			module: get_table!(Module),
 			type_ref: get_table!(TypeRef),
 			type_def: get_table!(TypeDef),
+			field: get_table!(Field),
 		})
 	}
 

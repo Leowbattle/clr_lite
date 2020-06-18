@@ -180,11 +180,11 @@ mod tests {
 			.rows()
 			.iter()
 			.enumerate()
-			.map(|(i, r)| {
+			.map(|(i, t)| {
 				(
-					metadata.strings().get(r.name).unwrap(),
+					metadata.strings().get(t.name).unwrap(),
 					TypeInfo {
-						def: r,
+						def: t,
 						handle: i.into(),
 					},
 				)
