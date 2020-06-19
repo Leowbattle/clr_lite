@@ -1,4 +1,4 @@
-use crate::metadata::*;
+use crate::metadata::tables::*;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum MemberRefParentHandle {

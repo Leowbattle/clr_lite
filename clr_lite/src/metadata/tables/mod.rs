@@ -148,6 +148,7 @@ pub struct Tables {
 	pub param: Table<Param>,
 	pub interface_impl: Table<InterfaceImpl>,
 	pub member_ref: Table<MemberRef>,
+	pub constant: Table<Constant>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -183,6 +184,7 @@ pub struct TableReader<'data> {
 	wide_blob: bool,
 
 	wide_type_def_or_ref: bool,
+	wide_has_constant: bool,
 	wide_member_ref_parent: bool,
 	wide_resolution_scope: bool,
 }
@@ -256,6 +258,11 @@ impl<'data> TableReader<'data> {
 				TypeDefOrRefHandle::TABLES,
 				&row_counts,
 			),
+			wide_has_constant: is_coded_index_wide(
+				HasConstantHandle::LARGE_ROW_SIZE,
+				HasConstantHandle::TABLES,
+				&row_counts,
+			),
 			wide_member_ref_parent: is_coded_index_wide(
 				MemberRefParentHandle::LARGE_ROW_SIZE,
 				MemberRefParentHandle::TABLES,
@@ -289,6 +296,7 @@ impl<'data> TableReader<'data> {
 			param: self.read_table::<Param>()?,
 			interface_impl: self.read_table::<InterfaceImpl>()?,
 			member_ref: self.read_table::<MemberRef>()?,
+			constant: self.read_table::<Constant>()?,
 		})
 	}
 
@@ -345,7 +353,7 @@ impl<'data> TableReader<'data> {
 	}
 
 	pub fn read_blob_handle(&mut self) -> Result<BlobHandle, TableReaderError> {
-		match self.wide_string {
+		match self.wide_blob {
 			true => Ok(BlobHandle(self._read::<u32>()? as usize)),
 			false => Ok(BlobHandle(self._read::<u16>()? as usize)),
 		}
@@ -368,6 +376,29 @@ impl<'data> TableReader<'data> {
 			_ => {
 				return Err(TableReaderError::BadImageFormat(format!(
 					"Invalid TypeDefOrRef tag {}",
+					tag
+				)))
+			}
+		})
+	}
+
+	pub fn read_has_constant_handle(&mut self) -> Result<HasConstantHandle, TableReaderError> {
+		let data = match self.wide_has_constant {
+			true => self._read::<u32>()? as usize,
+			false => self._read::<u16>()? as usize,
+		};
+
+		let tag = data & HasConstantHandle::TAG_MASK;
+		let index =
+			(data & !HasConstantHandle::TAG_MASK) >> (HasConstantHandle::TAG_MASK.count_ones());
+
+		Ok(match tag {
+			0 => HasConstantHandle::FieldHandle(FieldHandle(index)),
+			1 => HasConstantHandle::ParamHandle(ParamHandle(index)),
+			2 => HasConstantHandle::PropertyHandle(PropertyHandle(index)),
+			_ => {
+				return Err(TableReaderError::BadImageFormat(format!(
+					"Invalid HasConstant tag {}",
 					tag
 				)))
 			}

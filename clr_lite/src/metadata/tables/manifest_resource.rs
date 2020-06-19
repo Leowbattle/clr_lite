@@ -1,4 +1,4 @@
-use crate::metadata::*;
+use crate::metadata::tables::*;
 
 #[derive(Debug)]
 pub struct ManifestResource {}
@@ -14,7 +14,7 @@ impl From<ManifestResourceHandle> for usize {
 
 impl From<usize> for ManifestResourceHandle {
 	fn from(x: usize) -> ManifestResourceHandle {
-		ManifestResourceHandle(x+1)
+		ManifestResourceHandle(x + 1)
 	}
 }
 

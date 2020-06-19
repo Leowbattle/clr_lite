@@ -15,6 +15,10 @@ impl<'data> BinaryReader<'data> {
 		self.pos
 	}
 
+	pub fn data(&self) -> &'data [u8] {
+		self.data
+	}
+
 	pub fn goto(&mut self, x: usize) -> bool {
 		self.pos = x;
 		self.pos <= self.data.len()
@@ -25,7 +29,7 @@ impl<'data> BinaryReader<'data> {
 	}
 
 	pub fn peek<T: CopyFromBytes>(&self) -> Option<T> {
-		if self.pos + size_of::<T>() >= self.data.len() {
+		if self.pos + size_of::<T>() > self.data.len() {
 			None
 		} else {
 			Some(unsafe { *(self.data[self.pos..].as_ptr() as *const T) })
@@ -49,7 +53,7 @@ impl<'data> BinaryReader<'data> {
 	}
 
 	pub fn read_array<T: CopyFromBytes>(&mut self, count: usize) -> Option<&'data [T]> {
-		if self.pos + count * size_of::<T>() >= self.data.len() {
+		if self.pos + count * size_of::<T>() > self.data.len() {
 			None
 		} else {
 			let data =

@@ -1,5 +1,5 @@
 ///! ECMA-335 II.22.38
-use crate::metadata::*;
+use crate::metadata::tables::*;
 
 #[derive(Debug)]
 pub struct TypeRef {
@@ -39,7 +39,7 @@ impl TableRow for TypeRef {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::metadata::*;
+	use crate::metadata::tables::*;
 
 	#[test]
 	fn test_type_ref() {

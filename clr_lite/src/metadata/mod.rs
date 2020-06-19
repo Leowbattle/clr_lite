@@ -7,11 +7,13 @@ pub use user_strings_heap::*;
 pub mod blob_heap;
 pub use blob_heap::*;
 
+pub mod blob;
+
 pub mod guid_heap;
 pub use guid_heap::*;
 
 pub mod tables;
-pub use tables::*;
+use tables::*;
 
 pub mod metadata_token;
 pub use metadata_token::*;
@@ -214,6 +216,10 @@ impl<'data> Metadata<'data> {
 
 	pub fn strings(&self) -> &'data StringsHeap {
 		&self.strings_heap
+	}
+
+	pub fn blob(&self) -> &'data BlobHeap {
+		&self.blob_heap
 	}
 
 	pub fn tables<'a>(&'a self) -> &'a Tables {

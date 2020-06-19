@@ -1,4 +1,4 @@
-use crate::metadata::*;
+use crate::metadata::tables::*;
 
 #[derive(Debug)]
 pub struct Event {}
@@ -14,7 +14,7 @@ impl From<EventHandle> for usize {
 
 impl From<usize> for EventHandle {
 	fn from(x: usize) -> EventHandle {
-		EventHandle(x+1)
+		EventHandle(x + 1)
 	}
 }
 

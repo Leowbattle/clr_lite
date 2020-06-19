@@ -1,4 +1,4 @@
-use crate::metadata::*;
+use crate::metadata::tables::*;
 
 #[derive(Debug)]
 pub struct GenericParamConstraint {}
@@ -14,7 +14,7 @@ impl From<GenericParamConstraintHandle> for usize {
 
 impl From<usize> for GenericParamConstraintHandle {
 	fn from(x: usize) -> GenericParamConstraintHandle {
-		GenericParamConstraintHandle(x+1)
+		GenericParamConstraintHandle(x + 1)
 	}
 }
 

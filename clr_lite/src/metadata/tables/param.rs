@@ -1,5 +1,5 @@
 ///! ECMA-335 II.22.33
-use crate::metadata::*;
+use crate::metadata::tables::*;
 
 #[derive(Debug)]
 pub struct Param {

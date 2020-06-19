@@ -1,5 +1,5 @@
 ///! ECMA-335 II.22.37
-use crate::metadata::*;
+use crate::metadata::tables::*;
 
 #[derive(Debug)]
 pub struct TypeDef {
@@ -161,7 +161,7 @@ impl TableRow for TypeDef {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::metadata::*;
+	use crate::metadata::tables::*;
 
 	use std::collections::HashMap;
 

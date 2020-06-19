@@ -1,5 +1,5 @@
 ///! ECMA-335 II.22.30
-use crate::metadata::*;
+use crate::metadata::tables::*;
 
 #[derive(Debug)]
 pub struct Module {
@@ -40,7 +40,7 @@ impl TableRow for Module {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::metadata::*;
+	use crate::metadata::tables::*;
 
 	#[test]
 	fn test_module() {
