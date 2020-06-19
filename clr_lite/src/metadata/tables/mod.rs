@@ -152,6 +152,7 @@ pub struct Tables {
 	pub custom_attribute: Table<CustomAttribute>,
 	pub field_marshal: Table<FieldMarshal>,
 	pub decl_security: Table<DeclSecurity>,
+	pub class_layout: Table<ClassLayout>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -330,6 +331,7 @@ impl<'data> TableReader<'data> {
 			custom_attribute: self.read_table::<CustomAttribute>()?,
 			field_marshal: self.read_table::<FieldMarshal>()?,
 			decl_security: self.read_table::<DeclSecurity>()?,
+			class_layout: self.read_table::<ClassLayout>()?,
 		})
 	}
 
