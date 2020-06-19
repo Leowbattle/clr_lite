@@ -6,7 +6,7 @@ pub enum BlobReaderError {
 }
 
 pub struct BlobReader<'data> {
-	reader: BinaryReader<'data>,
+	pub(crate) reader: BinaryReader<'data>,
 }
 
 impl<'data> BlobReader<'data> {
@@ -28,13 +28,13 @@ impl<'data> BlobReader<'data> {
 			.ok_or_else(|| BlobReaderError::BadBlob("Unexpected EOF".to_string()))
 	}
 
-	fn peek<T: CopyFromBytes>(&mut self) -> Result<T, BlobReaderError> {
+	pub fn peek<T: CopyFromBytes>(&mut self) -> Result<T, BlobReaderError> {
 		self.reader
 			.peek::<T>()
 			.ok_or_else(|| BlobReaderError::BadBlob("Unexpected EOF".to_string()))
 	}
 
-	fn read_compressed_u32(&mut self) -> Result<u32, BlobReaderError> {
+	pub fn read_compressed_u32(&mut self) -> Result<u32, BlobReaderError> {
 		let x = self.peek::<u8>()?;
 		if x & 0xc0 == 0xc0 {
 			Ok(u32::from_be(self.read::<u32>()?) - 0xc000_0000)

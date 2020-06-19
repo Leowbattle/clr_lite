@@ -7,6 +7,9 @@ pub use has_constant::*;
 pub mod has_custom_attribute;
 pub use has_custom_attribute::*;
 
+pub mod has_field_marshal;
+pub use has_field_marshal::*;
+
 pub mod member_ref_parent;
 pub use member_ref_parent::*;
 

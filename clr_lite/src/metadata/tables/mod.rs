@@ -150,6 +150,7 @@ pub struct Tables {
 	pub member_ref: Table<MemberRef>,
 	pub constant: Table<Constant>,
 	pub custom_attribute: Table<CustomAttribute>,
+	pub field_marshal: Table<FieldMarshal>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -187,6 +188,7 @@ pub struct TableReader<'data> {
 	wide_type_def_or_ref: bool,
 	wide_has_constant: bool,
 	wide_has_custom_attribute: bool,
+	wide_has_field_marshal: bool,
 	wide_member_ref_parent: bool,
 	wide_custom_attribute_type: bool,
 	wide_resolution_scope: bool,
@@ -271,6 +273,11 @@ impl<'data> TableReader<'data> {
 				HasCustomAttributeHandle::TABLES,
 				&row_counts,
 			),
+			wide_has_field_marshal: is_coded_index_wide(
+				HasFieldMarshalHandle::LARGE_ROW_SIZE,
+				HasFieldMarshalHandle::TABLES,
+				&row_counts,
+			),
 			wide_member_ref_parent: is_coded_index_wide(
 				MemberRefParentHandle::LARGE_ROW_SIZE,
 				MemberRefParentHandle::TABLES,
@@ -291,9 +298,10 @@ impl<'data> TableReader<'data> {
 	}
 
 	fn read_table<T: TableRow>(&mut self) -> Result<Table<T>, TableReaderError> {
-		let mut table = Vec::with_capacity(self.row_counts[T::TYPE as usize]);
+		let count = self.row_counts[T::TYPE as usize];
+		let mut table = Vec::with_capacity(count);
 
-		for _ in 0..table.capacity() {
+		for _ in 0..count {
 			table.push(T::read_row(self)?);
 		}
 		Ok(Table::<T>(table.into_boxed_slice()))
@@ -311,6 +319,7 @@ impl<'data> TableReader<'data> {
 			member_ref: self.read_table::<MemberRef>()?,
 			constant: self.read_table::<Constant>()?,
 			custom_attribute: self.read_table::<CustomAttribute>()?,
+			field_marshal: self.read_table::<FieldMarshal>()?,
 		})
 	}
 
@@ -456,6 +465,30 @@ impl<'data> TableReader<'data> {
 			_ => {
 				return Err(TableReaderError::BadImageFormat(format!(
 					"Invalid HasCustomAttribute tag {}",
+					tag
+				)))
+			}
+		})
+	}
+
+	pub fn read_has_field_marshal_handle(
+		&mut self,
+	) -> Result<HasFieldMarshalHandle, TableReaderError> {
+		let data = match self.wide_has_field_marshal {
+			true => self._read::<u32>()? as usize,
+			false => self._read::<u16>()? as usize,
+		};
+
+		let tag = data & HasFieldMarshalHandle::TAG_MASK;
+		let index = (data & !HasFieldMarshalHandle::TAG_MASK)
+			>> (HasFieldMarshalHandle::TAG_MASK.count_ones());
+
+		Ok(match tag {
+			0 => HasFieldMarshalHandle::FieldHandle(FieldHandle(index)),
+			1 => HasFieldMarshalHandle::ParamHandle(ParamHandle(index)),
+			_ => {
+				return Err(TableReaderError::BadImageFormat(format!(
+					"Invalid TypeDefOrRef tag {}",
 					tag
 				)))
 			}
