@@ -10,15 +10,14 @@ fn main() {
 
 	let metadata = Metadata::read(data).unwrap();
 
-	for l in metadata.tables().class_layout.rows() {
+	for f in metadata.tables().field_layout.rows() {
 		println!(
-			"{} pack = {:?} size = {:?}",
+			"{} offset = {}",
 			metadata
 				.strings()
-				.get(metadata.tables().type_def[l.parent].name)
+				.get(metadata.tables().field[f.field].name)
 				.unwrap(),
-			l.packing_size,
-			l.class_size
+			f.offset
 		);
 	}
 }
