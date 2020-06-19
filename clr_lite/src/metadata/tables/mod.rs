@@ -151,6 +151,7 @@ pub struct Tables {
 	pub constant: Table<Constant>,
 	pub custom_attribute: Table<CustomAttribute>,
 	pub field_marshal: Table<FieldMarshal>,
+	pub decl_security: Table<DeclSecurity>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -181,14 +182,17 @@ pub struct TableReader<'data> {
 
 	// The following variables say if an index is encoded with 2 or 4 bytes
 	wide_table_handles: [bool; 64],
+
 	wide_string: bool,
 	wide_guid: bool,
 	wide_blob: bool,
 
+	// Coded indices
 	wide_type_def_or_ref: bool,
 	wide_has_constant: bool,
 	wide_has_custom_attribute: bool,
 	wide_has_field_marshal: bool,
+	wide_has_decl_security: bool,
 	wide_member_ref_parent: bool,
 	wide_custom_attribute_type: bool,
 	wide_resolution_scope: bool,
@@ -278,6 +282,11 @@ impl<'data> TableReader<'data> {
 				HasFieldMarshalHandle::TABLES,
 				&row_counts,
 			),
+			wide_has_decl_security: is_coded_index_wide(
+				HasDeclSecurityHandle::LARGE_ROW_SIZE,
+				HasDeclSecurityHandle::TABLES,
+				&row_counts,
+			),
 			wide_member_ref_parent: is_coded_index_wide(
 				MemberRefParentHandle::LARGE_ROW_SIZE,
 				MemberRefParentHandle::TABLES,
@@ -320,6 +329,7 @@ impl<'data> TableReader<'data> {
 			constant: self.read_table::<Constant>()?,
 			custom_attribute: self.read_table::<CustomAttribute>()?,
 			field_marshal: self.read_table::<FieldMarshal>()?,
+			decl_security: self.read_table::<DeclSecurity>()?,
 		})
 	}
 
@@ -489,6 +499,31 @@ impl<'data> TableReader<'data> {
 			_ => {
 				return Err(TableReaderError::BadImageFormat(format!(
 					"Invalid TypeDefOrRef tag {}",
+					tag
+				)))
+			}
+		})
+	}
+
+	pub fn read_has_decl_security_handle(
+		&mut self,
+	) -> Result<HasDeclSecurityHandle, TableReaderError> {
+		let data = match self.wide_has_decl_security {
+			true => self._read::<u32>()? as usize,
+			false => self._read::<u16>()? as usize,
+		};
+
+		let tag = data & HasDeclSecurityHandle::TAG_MASK;
+		let index = (data & !HasDeclSecurityHandle::TAG_MASK)
+			>> (HasDeclSecurityHandle::TAG_MASK.count_ones());
+
+		Ok(match tag {
+			0 => HasDeclSecurityHandle::TypeDefHandle(TypeDefHandle(index)),
+			1 => HasDeclSecurityHandle::MethodDefHandle(MethodDefHandle(index)),
+			2 => HasDeclSecurityHandle::AssemblyHandle(AssemblyHandle(index)),
+			_ => {
+				return Err(TableReaderError::BadImageFormat(format!(
+					"Invalid HasDeclSecurity tag {}",
 					tag
 				)))
 			}
