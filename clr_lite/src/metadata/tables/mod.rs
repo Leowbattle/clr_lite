@@ -149,6 +149,7 @@ pub struct Tables {
 	pub interface_impl: Table<InterfaceImpl>,
 	pub member_ref: Table<MemberRef>,
 	pub constant: Table<Constant>,
+	pub custom_attribute: Table<CustomAttribute>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -185,7 +186,9 @@ pub struct TableReader<'data> {
 
 	wide_type_def_or_ref: bool,
 	wide_has_constant: bool,
+	wide_has_custom_attribute: bool,
 	wide_member_ref_parent: bool,
+	wide_custom_attribute_type: bool,
 	wide_resolution_scope: bool,
 }
 
@@ -263,9 +266,19 @@ impl<'data> TableReader<'data> {
 				HasConstantHandle::TABLES,
 				&row_counts,
 			),
+			wide_has_custom_attribute: is_coded_index_wide(
+				HasCustomAttributeHandle::LARGE_ROW_SIZE,
+				HasCustomAttributeHandle::TABLES,
+				&row_counts,
+			),
 			wide_member_ref_parent: is_coded_index_wide(
 				MemberRefParentHandle::LARGE_ROW_SIZE,
 				MemberRefParentHandle::TABLES,
+				&row_counts,
+			),
+			wide_custom_attribute_type: is_coded_index_wide(
+				CustomAttributeTypeHandle::LARGE_ROW_SIZE,
+				CustomAttributeTypeHandle::TABLES,
 				&row_counts,
 			),
 			wide_resolution_scope: is_coded_index_wide(
@@ -297,6 +310,7 @@ impl<'data> TableReader<'data> {
 			interface_impl: self.read_table::<InterfaceImpl>()?,
 			member_ref: self.read_table::<MemberRef>()?,
 			constant: self.read_table::<Constant>()?,
+			custom_attribute: self.read_table::<CustomAttribute>()?,
 		})
 	}
 
@@ -387,11 +401,9 @@ impl<'data> TableReader<'data> {
 			true => self._read::<u32>()? as usize,
 			false => self._read::<u16>()? as usize,
 		};
-
 		let tag = data & HasConstantHandle::TAG_MASK;
 		let index =
 			(data & !HasConstantHandle::TAG_MASK) >> (HasConstantHandle::TAG_MASK.count_ones());
-
 		Ok(match tag {
 			0 => HasConstantHandle::FieldHandle(FieldHandle(index)),
 			1 => HasConstantHandle::ParamHandle(ParamHandle(index)),
@@ -399,6 +411,51 @@ impl<'data> TableReader<'data> {
 			_ => {
 				return Err(TableReaderError::BadImageFormat(format!(
 					"Invalid HasConstant tag {}",
+					tag
+				)))
+			}
+		})
+	}
+
+	pub fn read_has_custom_attribute_handle(
+		&mut self,
+	) -> Result<HasCustomAttributeHandle, TableReaderError> {
+		let data = match self.wide_has_custom_attribute {
+			true => self._read::<u32>()? as usize,
+			false => self._read::<u16>()? as usize,
+		};
+
+		let tag = data & HasCustomAttributeHandle::TAG_MASK;
+		let index = (data & !HasCustomAttributeHandle::TAG_MASK)
+			>> (HasCustomAttributeHandle::TAG_MASK.count_ones());
+
+		Ok(match tag {
+			0 => HasCustomAttributeHandle::MethodDefHandle(MethodDefHandle(index)),
+			1 => HasCustomAttributeHandle::FieldHandle(FieldHandle(index)),
+			2 => HasCustomAttributeHandle::TypeRefHandle(TypeRefHandle(index)),
+			3 => HasCustomAttributeHandle::TypeDefHandle(TypeDefHandle(index)),
+			4 => HasCustomAttributeHandle::ParamHandle(ParamHandle(index)),
+			5 => HasCustomAttributeHandle::InterfaceImplHandle(InterfaceImplHandle(index)),
+			6 => HasCustomAttributeHandle::MemberRefHandle(MemberRefHandle(index)),
+			7 => HasCustomAttributeHandle::ModuleHandle(ModuleHandle(index)),
+			9 => HasCustomAttributeHandle::PropertyHandle(PropertyHandle(index)),
+			10 => HasCustomAttributeHandle::EventHandle(EventHandle(index)),
+			11 => HasCustomAttributeHandle::StandaloneSigHandle(StandaloneSigHandle(index)),
+			12 => HasCustomAttributeHandle::ModuleRefHandle(ModuleRefHandle(index)),
+			13 => HasCustomAttributeHandle::TypeSpecHandle(TypeSpecHandle(index)),
+			14 => HasCustomAttributeHandle::AssemblyHandle(AssemblyHandle(index)),
+			15 => HasCustomAttributeHandle::AssemblyRefHandle(AssemblyRefHandle(index)),
+			16 => HasCustomAttributeHandle::FileHandle(FileHandle(index)),
+			17 => HasCustomAttributeHandle::ExportedTypeHandle(ExportedTypeHandle(index)),
+			18 => HasCustomAttributeHandle::ManifestResourceHandle(ManifestResourceHandle(index)),
+			19 => HasCustomAttributeHandle::GenericParamHandle(GenericParamHandle(index)),
+			20 => HasCustomAttributeHandle::GenericParamConstraintHandle(
+				GenericParamConstraintHandle(index),
+			),
+			21 => HasCustomAttributeHandle::MethodSpecHandle(MethodSpecHandle(index)),
+			_ => {
+				return Err(TableReaderError::BadImageFormat(format!(
+					"Invalid HasCustomAttribute tag {}",
 					tag
 				)))
 			}
@@ -426,6 +483,30 @@ impl<'data> TableReader<'data> {
 			_ => {
 				return Err(TableReaderError::BadImageFormat(format!(
 					"Invalid MemberRefParent tag {}",
+					tag
+				)))
+			}
+		})
+	}
+
+	pub fn read_custom_attribute_type_handle(
+		&mut self,
+	) -> Result<CustomAttributeTypeHandle, TableReaderError> {
+		let data = match self.wide_custom_attribute_type {
+			true => self._read::<u32>()? as usize,
+			false => self._read::<u16>()? as usize,
+		};
+
+		let tag = data & CustomAttributeTypeHandle::TAG_MASK;
+		let index = (data & !CustomAttributeTypeHandle::TAG_MASK)
+			>> (CustomAttributeTypeHandle::TAG_MASK.count_ones());
+
+		Ok(match tag {
+			2 => CustomAttributeTypeHandle::MethodDefHandle(MethodDefHandle(index)),
+			3 => CustomAttributeTypeHandle::MemberRefHandle(MemberRefHandle(index)),
+			_ => {
+				return Err(TableReaderError::BadImageFormat(format!(
+					"Invalid CustomAttributeType tag {}",
 					tag
 				)))
 			}
