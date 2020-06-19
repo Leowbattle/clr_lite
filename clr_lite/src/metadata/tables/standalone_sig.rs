@@ -1,7 +1,9 @@
 use crate::metadata::tables::*;
 
 #[derive(Debug)]
-pub struct StandaloneSig {}
+pub struct StandaloneSig {
+	pub signature: BlobHandle,
+}
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StandaloneSigHandle(pub(crate) usize);
@@ -23,6 +25,8 @@ impl TableRow for StandaloneSig {
 	const TYPE: TableType = TableType::StandaloneSig;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<StandaloneSig, TableReaderError> {
-		unimplemented!()
+		Ok(StandaloneSig {
+			signature: reader.read_blob_handle()?,
+		})
 	}
 }

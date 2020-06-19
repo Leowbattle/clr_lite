@@ -9,6 +9,7 @@ fn main() {
 	// 	include_bytes!("C:/Program Files (x86)/steam/steamapps/common/Terraria/Terraria.exe");
 
 	let metadata = Metadata::read(data).unwrap();
+	dbg!(metadata.tables().standalone_sig.rows().len());
 
 	for f in metadata.tables().field_layout.rows() {
 		println!(
