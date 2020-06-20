@@ -1,7 +1,11 @@
+///! ECMA-335 II.22.12
 use crate::metadata::tables::*;
 
 #[derive(Debug)]
-pub struct EventMap {}
+pub struct EventMap {
+	pub parent: TypeDefHandle,
+	pub event_list: EventHandle,
+}
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct EventMapHandle(pub(crate) usize);
@@ -23,6 +27,9 @@ impl TableRow for EventMap {
 	const TYPE: TableType = TableType::EventMap;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<EventMap, TableReaderError> {
-		unimplemented!()
+		Ok(EventMap {
+			parent: reader.read_type_def_handle()?,
+			event_list: reader.read_event_handle()?,
+		})
 	}
 }

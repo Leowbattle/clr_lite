@@ -155,6 +155,8 @@ pub struct Tables {
 	pub class_layout: Table<ClassLayout>,
 	pub field_layout: Table<FieldLayout>,
 	pub standalone_sig: Table<StandaloneSig>,
+	pub event_map: Table<EventMap>,
+	pub event: Table<Event>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -336,6 +338,8 @@ impl<'data> TableReader<'data> {
 			class_layout: self.read_table::<ClassLayout>()?,
 			field_layout: self.read_table::<FieldLayout>()?,
 			standalone_sig: self.read_table::<StandaloneSig>()?,
+			event_map: self.read_table::<EventMap>()?,
+			event: self.read_table::<Event>()?,
 		})
 	}
 
@@ -374,6 +378,13 @@ impl<'data> TableReader<'data> {
 		match self.wide_table_handles[TableType::Param as usize] {
 			true => Ok(ParamHandle(self._read::<u32>()? as usize)),
 			false => Ok(ParamHandle(self._read::<u16>()? as usize)),
+		}
+	}
+
+	pub fn read_event_handle(&mut self) -> Result<EventHandle, TableReaderError> {
+		match self.wide_table_handles[TableType::Event as usize] {
+			true => Ok(EventHandle(self._read::<u32>()? as usize)),
+			false => Ok(EventHandle(self._read::<u16>()? as usize)),
 		}
 	}
 
