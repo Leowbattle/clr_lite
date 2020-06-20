@@ -159,6 +159,7 @@ pub struct Tables {
 	pub event: Table<Event>,
 	pub property_map: Table<PropertyMap>,
 	pub property: Table<Property>,
+	pub method_semantics: Table<MethodSemantics>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -201,6 +202,7 @@ pub struct TableReader<'data> {
 	wide_has_field_marshal: bool,
 	wide_has_decl_security: bool,
 	wide_member_ref_parent: bool,
+	wide_has_semantics: bool,
 	wide_custom_attribute_type: bool,
 	wide_resolution_scope: bool,
 }
@@ -299,6 +301,11 @@ impl<'data> TableReader<'data> {
 				MemberRefParentHandle::TABLES,
 				&row_counts,
 			),
+			wide_has_semantics: is_coded_index_wide(
+				HasSemanticsHandle::LARGE_ROW_SIZE,
+				HasSemanticsHandle::TABLES,
+				&row_counts,
+			),
 			wide_custom_attribute_type: is_coded_index_wide(
 				CustomAttributeTypeHandle::LARGE_ROW_SIZE,
 				CustomAttributeTypeHandle::TABLES,
@@ -344,6 +351,7 @@ impl<'data> TableReader<'data> {
 			event: self.read_table::<Event>()?,
 			property_map: self.read_table::<PropertyMap>()?,
 			property: self.read_table::<Property>()?,
+			method_semantics: self.read_table::<MethodSemantics>()?,
 		})
 	}
 
@@ -579,6 +587,28 @@ impl<'data> TableReader<'data> {
 			_ => {
 				return Err(TableReaderError::BadImageFormat(format!(
 					"Invalid MemberRefParent tag {}",
+					tag
+				)))
+			}
+		})
+	}
+
+	pub fn read_has_semantics_handle(&mut self) -> Result<HasSemanticsHandle, TableReaderError> {
+		let data = match self.wide_has_semantics {
+			true => self._read::<u32>()? as usize,
+			false => self._read::<u16>()? as usize,
+		};
+
+		let tag = data & HasSemanticsHandle::TAG_MASK;
+		let index =
+			(data & !HasSemanticsHandle::TAG_MASK) >> (HasSemanticsHandle::TAG_MASK.count_ones());
+
+		Ok(match tag {
+			0 => HasSemanticsHandle::EventHandle(EventHandle(index)),
+			1 => HasSemanticsHandle::PropertyHandle(PropertyHandle(index)),
+			_ => {
+				return Err(TableReaderError::BadImageFormat(format!(
+					"Invalid HasSemantics tag {}",
 					tag
 				)))
 			}

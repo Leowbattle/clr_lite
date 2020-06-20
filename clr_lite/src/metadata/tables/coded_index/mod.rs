@@ -16,6 +16,9 @@ pub use has_decl_security::*;
 pub mod member_ref_parent;
 pub use member_ref_parent::*;
 
+pub mod has_semantics;
+pub use has_semantics::*;
+
 pub mod custom_attribute_type;
 pub use custom_attribute_type::*;
 
