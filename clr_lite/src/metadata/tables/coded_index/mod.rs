@@ -19,6 +19,9 @@ pub use member_ref_parent::*;
 pub mod has_semantics;
 pub use has_semantics::*;
 
+pub mod method_def_or_ref;
+pub use method_def_or_ref::*;
+
 pub mod custom_attribute_type;
 pub use custom_attribute_type::*;
 

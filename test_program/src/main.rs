@@ -3,7 +3,7 @@ use clr_lite::metadata::*;
 
 fn main() {
 	let data = include_bytes!(
-		"../../tests/metadata/tables/PropertyTests/bin/Debug/netcoreapp3.1/PropertyTests.dll"
+		"../../tests/metadata/tables/MethodImplTests/bin/Debug/netcoreapp3.1/MethodImplTests.dll"
 	);
 	// let data =
 	// 	include_bytes!("C:/Program Files (x86)/steam/steamapps/common/Terraria/Terraria.exe");
@@ -13,24 +13,31 @@ fn main() {
 	let end = std::time::Instant::now();
 	let d = end - start;
 
-	for m in metadata.tables().method_semantics.rows() {
+	for m in metadata.tables().method_impl.rows() {
 		println!(
-			"{:-<50} is {:?} for {}",
+			"{}: {} overrides {}",
 			metadata
 				.strings()
-				.get(metadata.tables().method_def[m.method].name)
+				.get(metadata.tables().type_def[m.class].name)
 				.unwrap(),
-			m.semantics,
-			match m.association {
-				HasSemanticsHandle::EventHandle(e) => metadata
-					.strings()
-					.get(metadata.tables().event[e].name)
-					.unwrap(),
-				HasSemanticsHandle::PropertyHandle(p) => metadata
-					.strings()
-					.get(metadata.tables().property[p].name)
-					.unwrap(),
-			}
+			metadata
+				.strings()
+				.get(match m.body {
+					MethodDefOrRefHandle::MethodDefHandle(m) =>
+						metadata.tables().method_def[m].name,
+					MethodDefOrRefHandle::MemberRefHandle(m) =>
+						metadata.tables().member_ref[m].name,
+				})
+				.unwrap(),
+			metadata
+				.strings()
+				.get(match m.declaration {
+					MethodDefOrRefHandle::MethodDefHandle(m) =>
+						metadata.tables().method_def[m].name,
+					MethodDefOrRefHandle::MemberRefHandle(m) =>
+						metadata.tables().member_ref[m].name,
+				})
+				.unwrap()
 		);
 	}
 

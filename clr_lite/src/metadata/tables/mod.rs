@@ -160,6 +160,7 @@ pub struct Tables {
 	pub property_map: Table<PropertyMap>,
 	pub property: Table<Property>,
 	pub method_semantics: Table<MethodSemantics>,
+	pub method_impl: Table<MethodImpl>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -203,6 +204,7 @@ pub struct TableReader<'data> {
 	wide_has_decl_security: bool,
 	wide_member_ref_parent: bool,
 	wide_has_semantics: bool,
+	wide_method_def_or_ref: bool,
 	wide_custom_attribute_type: bool,
 	wide_resolution_scope: bool,
 }
@@ -306,6 +308,11 @@ impl<'data> TableReader<'data> {
 				HasSemanticsHandle::TABLES,
 				&row_counts,
 			),
+			wide_method_def_or_ref: is_coded_index_wide(
+				MethodDefOrRefHandle::LARGE_ROW_SIZE,
+				MethodDefOrRefHandle::TABLES,
+				&row_counts,
+			),
 			wide_custom_attribute_type: is_coded_index_wide(
 				CustomAttributeTypeHandle::LARGE_ROW_SIZE,
 				CustomAttributeTypeHandle::TABLES,
@@ -352,6 +359,7 @@ impl<'data> TableReader<'data> {
 			property_map: self.read_table::<PropertyMap>()?,
 			property: self.read_table::<Property>()?,
 			method_semantics: self.read_table::<MethodSemantics>()?,
+			method_impl: self.read_table::<MethodImpl>()?,
 		})
 	}
 
@@ -609,6 +617,30 @@ impl<'data> TableReader<'data> {
 			_ => {
 				return Err(TableReaderError::BadImageFormat(format!(
 					"Invalid HasSemantics tag {}",
+					tag
+				)))
+			}
+		})
+	}
+
+	pub fn read_method_def_or_ref_handle(
+		&mut self,
+	) -> Result<MethodDefOrRefHandle, TableReaderError> {
+		let data = match self.wide_method_def_or_ref {
+			true => self._read::<u32>()? as usize,
+			false => self._read::<u16>()? as usize,
+		};
+
+		let tag = data & MethodDefOrRefHandle::TAG_MASK;
+		let index = (data & !MethodDefOrRefHandle::TAG_MASK)
+			>> (MethodDefOrRefHandle::TAG_MASK.count_ones());
+
+		Ok(match tag {
+			0 => MethodDefOrRefHandle::MethodDefHandle(MethodDefHandle(index)),
+			1 => MethodDefOrRefHandle::MemberRefHandle(MemberRefHandle(index)),
+			_ => {
+				return Err(TableReaderError::BadImageFormat(format!(
+					"Invalid MethodDefOrRefHandle tag {}",
 					tag
 				)))
 			}
