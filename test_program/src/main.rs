@@ -1,40 +1,43 @@
-use clr_lite::metadata::tables::*;
 use clr_lite::metadata::*;
 
 fn main() {
 	let data = include_bytes!(
-		"../../tests/metadata/tables/EventTests/bin/Debug/netcoreapp3.1/EventTests.dll"
+		"../../tests/metadata/tables/PropertyTests/bin/Debug/netcoreapp3.1/PropertyTests.dll"
 	);
-	let data =
-		include_bytes!("C:/Program Files (x86)/steam/steamapps/common/Terraria/Terraria.exe");
+	// let data =
+	// 	include_bytes!("C:/Program Files (x86)/steam/steamapps/common/Terraria/Terraria.exe");
 
+	let start = std::time::Instant::now();
 	let metadata = Metadata::read(data).unwrap();
+	let end = std::time::Instant::now();
+	let d = end - start;
+	println!("{:?}", d);
 
-	for (i, e) in metadata.tables().event_map.rows().iter().enumerate() {
+	for (i, p) in metadata.tables().property_map.rows().iter().enumerate() {
 		println!(
 			"{:?}.{}",
 			metadata
 				.strings()
-				.get(metadata.tables().type_def[e.parent].namespace)
+				.get(metadata.tables().type_def[p.parent].namespace)
 				.unwrap(),
 			metadata
 				.strings()
-				.get(metadata.tables().type_def[e.parent].name)
+				.get(metadata.tables().type_def[p.parent].name)
 				.unwrap()
 		);
 
-		let event_end = if i == metadata.tables().event_map.rows().len() - 1 {
-			metadata.tables().event.rows().len()
+		let property_end = if i == metadata.tables().property_map.rows().len() - 1 {
+			metadata.tables().property.rows().len()
 		} else {
-			usize::from(metadata.tables().event_map.rows()[i + 1].event_list) - 1
+			usize::from(metadata.tables().property_map.rows()[i + 1].property_list) - 1
 		};
 
-		for i in usize::from(e.event_list) - 1..event_end {
+		for i in usize::from(p.property_list) - 1..property_end {
 			println!(
 				"\t{}",
 				metadata
 					.strings()
-					.get(metadata.tables().event[i.into()].name)
+					.get(metadata.tables().property[i.into()].name)
 					.unwrap()
 			);
 		}

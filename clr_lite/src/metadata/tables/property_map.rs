@@ -1,7 +1,10 @@
 use crate::metadata::tables::*;
 
 #[derive(Debug)]
-pub struct PropertyMap {}
+pub struct PropertyMap {
+	pub parent: TypeDefHandle,
+	pub property_list: PropertyHandle,
+}
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PropertyMapHandle(pub(crate) usize);
@@ -23,6 +26,9 @@ impl TableRow for PropertyMap {
 	const TYPE: TableType = TableType::PropertyMap;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<PropertyMap, TableReaderError> {
-		unimplemented!()
+		Ok(PropertyMap {
+			parent: reader.read_type_def_handle()?,
+			property_list: reader.read_property_handle()?,
+		})
 	}
 }
