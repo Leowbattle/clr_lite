@@ -161,6 +161,8 @@ pub struct Tables {
 	pub property: Table<Property>,
 	pub method_semantics: Table<MethodSemantics>,
 	pub method_impl: Table<MethodImpl>,
+	pub module_ref: Table<ModuleRef>,
+	pub type_spec: Table<TypeSpec>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -360,6 +362,8 @@ impl<'data> TableReader<'data> {
 			property: self.read_table::<Property>()?,
 			method_semantics: self.read_table::<MethodSemantics>()?,
 			method_impl: self.read_table::<MethodImpl>()?,
+			module_ref: self.read_table::<ModuleRef>()?,
+			type_spec: self.read_table::<TypeSpec>()?,
 		})
 	}
 

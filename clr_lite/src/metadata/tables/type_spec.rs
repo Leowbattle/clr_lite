@@ -1,7 +1,10 @@
+///! ECMA-335 II.22.39
 use crate::metadata::tables::*;
 
 #[derive(Debug)]
-pub struct TypeSpec {}
+pub struct TypeSpec {
+	pub signature: BlobHandle,
+}
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TypeSpecHandle(pub(crate) usize);
@@ -23,6 +26,8 @@ impl TableRow for TypeSpec {
 	const TYPE: TableType = TableType::TypeSpec;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<TypeSpec, TableReaderError> {
-		unimplemented!()
+		Ok(TypeSpec {
+			signature: reader.read_blob_handle()?,
+		})
 	}
 }
