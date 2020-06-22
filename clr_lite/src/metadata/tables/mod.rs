@@ -163,6 +163,7 @@ pub struct Tables {
 	pub method_impl: Table<MethodImpl>,
 	pub module_ref: Table<ModuleRef>,
 	pub type_spec: Table<TypeSpec>,
+	pub impl_map: Table<ImplMap>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -207,6 +208,7 @@ pub struct TableReader<'data> {
 	wide_member_ref_parent: bool,
 	wide_has_semantics: bool,
 	wide_method_def_or_ref: bool,
+	wide_member_forwarded: bool,
 	wide_custom_attribute_type: bool,
 	wide_resolution_scope: bool,
 }
@@ -315,6 +317,11 @@ impl<'data> TableReader<'data> {
 				MethodDefOrRefHandle::TABLES,
 				&row_counts,
 			),
+			wide_member_forwarded: is_coded_index_wide(
+				MemberForwardedHandle::LARGE_ROW_SIZE,
+				MemberForwardedHandle::TABLES,
+				&row_counts,
+			),
 			wide_custom_attribute_type: is_coded_index_wide(
 				CustomAttributeTypeHandle::LARGE_ROW_SIZE,
 				CustomAttributeTypeHandle::TABLES,
@@ -364,6 +371,7 @@ impl<'data> TableReader<'data> {
 			method_impl: self.read_table::<MethodImpl>()?,
 			module_ref: self.read_table::<ModuleRef>()?,
 			type_spec: self.read_table::<TypeSpec>()?,
+			impl_map: self.read_table::<ImplMap>()?,
 		})
 	}
 
@@ -416,6 +424,13 @@ impl<'data> TableReader<'data> {
 		match self.wide_table_handles[TableType::Property as usize] {
 			true => Ok(PropertyHandle(self._read::<u32>()? as usize)),
 			false => Ok(PropertyHandle(self._read::<u16>()? as usize)),
+		}
+	}
+
+	pub fn read_module_ref_handle(&mut self) -> Result<ModuleRefHandle, TableReaderError> {
+		match self.wide_table_handles[TableType::ModuleRef as usize] {
+			true => Ok(ModuleRefHandle(self._read::<u32>()? as usize)),
+			false => Ok(ModuleRefHandle(self._read::<u16>()? as usize)),
 		}
 	}
 
@@ -645,6 +660,30 @@ impl<'data> TableReader<'data> {
 			_ => {
 				return Err(TableReaderError::BadImageFormat(format!(
 					"Invalid MethodDefOrRefHandle tag {}",
+					tag
+				)))
+			}
+		})
+	}
+
+	pub fn read_member_forwarded_handle(
+		&mut self,
+	) -> Result<MemberForwardedHandle, TableReaderError> {
+		let data = match self.wide_member_forwarded {
+			true => self._read::<u32>()? as usize,
+			false => self._read::<u16>()? as usize,
+		};
+
+		let tag = data & MemberForwardedHandle::TAG_MASK;
+		let index = (data & !MemberForwardedHandle::TAG_MASK)
+			>> (MemberForwardedHandle::TAG_MASK.count_ones());
+
+		Ok(match tag {
+			0 => MemberForwardedHandle::FieldHandle(FieldHandle(index)),
+			1 => MemberForwardedHandle::MethodDefHandle(MethodDefHandle(index)),
+			_ => {
+				return Err(TableReaderError::BadImageFormat(format!(
+					"Invalid MemberForwardedHandle tag {}",
 					tag
 				)))
 			}

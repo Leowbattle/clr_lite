@@ -13,10 +13,15 @@ fn main() {
 	let end = std::time::Instant::now();
 	let d = end - start;
 
-	for m in metadata.tables().module_ref.rows() {
-		println!("{}", metadata.strings().get(m.name).unwrap());
+	for i in metadata.tables().impl_map.rows() {
+		println!(
+			"{} in {}",
+			metadata.strings().get(i.name).unwrap(),
+			metadata
+				.strings()
+				.get(metadata.tables().module_ref[i.module].name)
+				.unwrap()
+		);
 	}
-
-	dbg!(metadata.tables().type_spec.rows().len());
 	println!("{:?}", d);
 }
