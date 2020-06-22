@@ -39,7 +39,6 @@ impl TableRow for CustomAttribute {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::metadata::tables::*;
 
 	use std::collections::HashMap;
 

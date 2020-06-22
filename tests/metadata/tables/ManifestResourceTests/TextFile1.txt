@@ -1,0 +1,3 @@
+﻿Wow, I am a manifest resource!
+
+How exciting is that?

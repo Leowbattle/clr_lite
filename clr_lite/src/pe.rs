@@ -21,7 +21,7 @@ impl ToString for PeError {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub struct Rva(u32);
+pub struct Rva(pub(crate) u32);
 
 impl fmt::Display for Rva {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

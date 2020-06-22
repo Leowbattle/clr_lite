@@ -29,6 +29,7 @@ pub struct Metadata<'data> {
 	pe_data: &'data [u8],
 	pe_info: PeInfo<'data>,
 
+	cli_header: CliHeader,
 	metadata: &'data [u8],
 
 	strings_heap: StringsHeap<'data>,
@@ -203,6 +204,7 @@ impl<'data> Metadata<'data> {
 			pe_info: pe_info,
 			pe_data,
 
+			cli_header,
 			metadata,
 
 			strings_heap,
@@ -227,5 +229,19 @@ impl<'data> Metadata<'data> {
 
 	pub fn tables<'a>(&'a self) -> &'a Tables {
 		&self.tables
+	}
+
+	pub fn get_pe_data<'a>(&'a self, rva: RvaAndSize) -> Result<&'a [u8], MetadataError> {
+		let offset = self
+			.pe_info
+			.resolve_rva(rva.rva)
+			.map_err(|e| MetadataError::BadImageFormat(e.to_string()))?;
+		Ok(&self.pe_data[offset..offset + rva.size as usize])
+	}
+
+	pub fn get_resource_data<'a>(&'a self, offset: usize) -> Result<&'a [u8], MetadataError> {
+		let data = &self.get_pe_data(self.cli_header.resources)?[offset..];
+		let length = u32::from_le_bytes([data[0], data[1], data[2], data[3]]) as usize;
+		Ok(&data[4..4 + length])
 	}
 }

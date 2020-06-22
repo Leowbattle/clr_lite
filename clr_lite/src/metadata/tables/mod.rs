@@ -151,7 +151,7 @@ pub struct Tables {
 	pub constant: Table<Constant>,
 	pub custom_attribute: Table<CustomAttribute>,
 	pub field_marshal: Table<FieldMarshal>,
-	decl_security: Table<DeclSecurity>,
+	_decl_security: Table<DeclSecurity>,
 	pub class_layout: Table<ClassLayout>,
 	pub field_layout: Table<FieldLayout>,
 	pub standalone_sig: Table<StandaloneSig>,
@@ -173,6 +173,7 @@ pub struct Tables {
 	_assembly_ref_os: Table<AssemblyRefOs>,
 	pub file: Table<File>,
 	pub exported_type: Table<ExportedType>,
+	pub manifest_resource: Table<ManifestResource>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -374,7 +375,7 @@ impl<'data> TableReader<'data> {
 			constant: self.read_table::<Constant>()?,
 			custom_attribute: self.read_table::<CustomAttribute>()?,
 			field_marshal: self.read_table::<FieldMarshal>()?,
-			decl_security: self.read_table::<DeclSecurity>()?,
+			_decl_security: self.read_table::<DeclSecurity>()?,
 			class_layout: self.read_table::<ClassLayout>()?,
 			field_layout: self.read_table::<FieldLayout>()?,
 			standalone_sig: self.read_table::<StandaloneSig>()?,
@@ -396,6 +397,7 @@ impl<'data> TableReader<'data> {
 			_assembly_ref_os: self.read_table::<AssemblyRefOs>()?,
 			file: self.read_table::<File>()?,
 			exported_type: self.read_table::<ExportedType>()?,
+			manifest_resource: self.read_table::<ManifestResource>()?,
 		})
 	}
 

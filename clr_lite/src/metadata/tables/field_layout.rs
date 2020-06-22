@@ -37,7 +37,6 @@ impl TableRow for FieldLayout {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::metadata::tables::*;
 
 	use std::collections::HashMap;
 

@@ -53,7 +53,6 @@ impl TableRow for ClassLayout {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::metadata::tables::*;
 
 	use std::collections::HashMap;
 
