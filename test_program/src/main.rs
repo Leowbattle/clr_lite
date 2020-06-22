@@ -15,18 +15,8 @@ fn main() {
 	let end = std::time::Instant::now();
 	let d = end - start;
 
-	for nc in metadata.tables().nested_class.rows() {
-		println!(
-			"{}.{}",
-			metadata
-				.strings()
-				.get(metadata.tables().type_def[nc.enclosing].name)
-				.unwrap(),
-			metadata
-				.strings()
-				.get(metadata.tables().type_def[nc.nested].name)
-				.unwrap()
-		);
+	for g in metadata.tables().generic_param.rows() {
+		println!("{}, {:?}", metadata.strings().get(g.name).unwrap(), g);
 	}
 
 	println!("{:?}", d);

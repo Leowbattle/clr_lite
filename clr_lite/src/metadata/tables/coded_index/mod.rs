@@ -33,3 +33,6 @@ pub use custom_attribute_type::*;
 
 pub mod resolution_scope;
 pub use resolution_scope::*;
+
+pub mod type_or_method_def;
+pub use type_or_method_def::*;

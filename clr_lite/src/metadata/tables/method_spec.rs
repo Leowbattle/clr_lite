@@ -1,7 +1,11 @@
+///! ECMA-335 II.22.29
 use crate::metadata::tables::*;
 
 #[derive(Debug)]
-pub struct MethodSpec {}
+pub struct MethodSpec {
+	pub method: MethodDefOrRefHandle,
+	pub instantiation: BlobHandle,
+}
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct MethodSpecHandle(pub(crate) usize);
@@ -23,6 +27,9 @@ impl TableRow for MethodSpec {
 	const TYPE: TableType = TableType::MethodSpec;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<MethodSpec, TableReaderError> {
-		unimplemented!()
+		Ok(MethodSpec {
+			method: reader.read_method_def_or_ref_handle()?,
+			instantiation: reader.read_blob_handle()?,
+		})
 	}
 }

@@ -175,6 +175,9 @@ pub struct Tables {
 	pub exported_type: Table<ExportedType>,
 	pub manifest_resource: Table<ManifestResource>,
 	pub nested_class: Table<NestedClass>,
+	pub generic_param: Table<GenericParam>,
+	pub method_spec: Table<MethodSpec>,
+	pub generic_param_constraint: Table<GenericParamConstraint>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -223,6 +226,7 @@ pub struct TableReader<'data> {
 	wide_implementation: bool,
 	wide_custom_attribute_type: bool,
 	wide_resolution_scope: bool,
+	wide_type_or_method_def: bool,
 }
 
 bitflags! {
@@ -349,6 +353,11 @@ impl<'data> TableReader<'data> {
 				ResolutionScopeHandle::TABLES,
 				&row_counts,
 			),
+			wide_type_or_method_def: is_coded_index_wide(
+				TypeOrMethodDefHandle::LARGE_ROW_SIZE,
+				TypeOrMethodDefHandle::TABLES,
+				&row_counts,
+			),
 		}
 		.read_tables()
 	}
@@ -400,6 +409,9 @@ impl<'data> TableReader<'data> {
 			exported_type: self.read_table::<ExportedType>()?,
 			manifest_resource: self.read_table::<ManifestResource>()?,
 			nested_class: self.read_table::<NestedClass>()?,
+			generic_param: self.read_table::<GenericParam>()?,
+			method_spec: self.read_table::<MethodSpec>()?,
+			generic_param_constraint: self.read_table::<GenericParamConstraint>()?,
 		})
 	}
 
@@ -466,6 +478,13 @@ impl<'data> TableReader<'data> {
 		match self.wide_table_handles[TableType::AssemblyRef as usize] {
 			true => Ok(AssemblyRefHandle(self._read::<u32>()? as usize)),
 			false => Ok(AssemblyRefHandle(self._read::<u16>()? as usize)),
+		}
+	}
+
+	pub fn read_generic_param_handle(&mut self) -> Result<GenericParamHandle, TableReaderError> {
+		match self.wide_table_handles[TableType::GenericParam as usize] {
+			true => Ok(GenericParamHandle(self._read::<u32>()? as usize)),
+			false => Ok(GenericParamHandle(self._read::<u16>()? as usize)),
 		}
 	}
 
@@ -772,7 +791,9 @@ impl<'data> TableReader<'data> {
 		})
 	}
 
-	pub fn read_resolution_scope(&mut self) -> Result<ResolutionScopeHandle, TableReaderError> {
+	pub fn read_resolution_scope_handle(
+		&mut self,
+	) -> Result<ResolutionScopeHandle, TableReaderError> {
 		let data = match self.wide_resolution_scope {
 			true => self._read::<u32>()? as usize,
 			false => self._read::<u16>()? as usize,
@@ -790,6 +811,30 @@ impl<'data> TableReader<'data> {
 			_ => {
 				return Err(TableReaderError::BadImageFormat(format!(
 					"Invalid ResolutionScope tag {}",
+					tag
+				)))
+			}
+		})
+	}
+
+	pub fn read_type_or_method_def_handle(
+		&mut self,
+	) -> Result<TypeOrMethodDefHandle, TableReaderError> {
+		let data = match self.wide_type_or_method_def {
+			true => self._read::<u32>()? as usize,
+			false => self._read::<u16>()? as usize,
+		};
+
+		let tag = data & TypeOrMethodDefHandle::TAG_MASK;
+		let index = (data & !TypeOrMethodDefHandle::TAG_MASK)
+			>> (TypeOrMethodDefHandle::TAG_MASK.count_ones());
+
+		Ok(match tag {
+			0 => TypeOrMethodDefHandle::TypeDefHandle(TypeDefHandle(index)),
+			1 => TypeOrMethodDefHandle::MethodDefHandle(MethodDefHandle(index)),
+			_ => {
+				return Err(TableReaderError::BadImageFormat(format!(
+					"Invalid TypeOrMethodDefHandle tag {}",
 					tag
 				)))
 			}

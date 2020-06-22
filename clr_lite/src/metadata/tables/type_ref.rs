@@ -29,7 +29,7 @@ impl TableRow for TypeRef {
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<TypeRef, TableReaderError> {
 		Ok(TypeRef {
-			resolution_scope: reader.read_resolution_scope()?,
+			resolution_scope: reader.read_resolution_scope_handle()?,
 			name: reader.read_string_handle()?,
 			namespace: reader.read_string_handle()?,
 		})
