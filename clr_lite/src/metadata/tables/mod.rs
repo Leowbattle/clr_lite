@@ -174,6 +174,7 @@ pub struct Tables {
 	pub file: Table<File>,
 	pub exported_type: Table<ExportedType>,
 	pub manifest_resource: Table<ManifestResource>,
+	pub nested_class: Table<NestedClass>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -398,6 +399,7 @@ impl<'data> TableReader<'data> {
 			file: self.read_table::<File>()?,
 			exported_type: self.read_table::<ExportedType>()?,
 			manifest_resource: self.read_table::<ManifestResource>()?,
+			nested_class: self.read_table::<NestedClass>()?,
 		})
 	}
 
