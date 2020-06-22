@@ -1,7 +1,7 @@
 ///! ECMA-335 II.23.2.4
 use super::*;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct FieldSignature {
 	pub r#type: ElementType,
 }

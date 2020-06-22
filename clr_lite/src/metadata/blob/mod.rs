@@ -15,3 +15,6 @@ pub use field_signature::*;
 
 pub mod type_def_or_ref;
 pub use type_def_or_ref::*;
+
+pub mod method_def_signature;
+pub use method_def_signature::*;

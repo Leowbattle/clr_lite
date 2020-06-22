@@ -2,7 +2,7 @@ use clr_lite::metadata::*;
 
 fn main() {
 	let data = include_bytes!(
-		"../../tests/metadata/blob/FieldSignatureTests/bin/Debug/netcoreapp3.1/FieldSignatureTests.dll"
+		"../../tests/metadata/blob/MethodDefSignatureTests/bin/Debug/netcoreapp3.1/MethodDefSignatureTests.dll"
 	);
 	// let data =
 	// 	include_bytes!("C:/Program Files (x86)/steam/steamapps/common/Terraria/Terraria.exe");
@@ -11,15 +11,15 @@ fn main() {
 
 	let metadata = Metadata::read(data).unwrap();
 
-	for f in metadata.tables().field.rows() {
+	for m in metadata.tables().method_def.rows() {
 		println!(
 			"{}, {:?}",
-			metadata.strings().get(f.name).unwrap(),
+			metadata.strings().get(m.name).unwrap(),
 			metadata
 				.blob()
-				.new_reader(f.signature)
+				.new_reader(m.signature)
 				.unwrap()
-				.read_field_signature()
+				.read_method_def_signature()
 				.unwrap()
 		);
 	}
