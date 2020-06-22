@@ -169,6 +169,10 @@ pub struct Tables {
 	_assembly_processor: Table<AssemblyProcessor>,
 	_assembly_os: Table<AssemblyOs>,
 	pub assembly_ref: Table<AssemblyRef>,
+	_assembly_ref_processor: Table<AssemblyRefProcessor>,
+	_assembly_ref_os: Table<AssemblyRefOs>,
+	pub file: Table<File>,
+	pub exported_type: Table<ExportedType>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -214,6 +218,7 @@ pub struct TableReader<'data> {
 	wide_has_semantics: bool,
 	wide_method_def_or_ref: bool,
 	wide_member_forwarded: bool,
+	wide_implementation: bool,
 	wide_custom_attribute_type: bool,
 	wide_resolution_scope: bool,
 }
@@ -327,6 +332,11 @@ impl<'data> TableReader<'data> {
 				MemberForwardedHandle::TABLES,
 				&row_counts,
 			),
+			wide_implementation: is_coded_index_wide(
+				ImplementationHandle::LARGE_ROW_SIZE,
+				ImplementationHandle::TABLES,
+				&row_counts,
+			),
 			wide_custom_attribute_type: is_coded_index_wide(
 				CustomAttributeTypeHandle::LARGE_ROW_SIZE,
 				CustomAttributeTypeHandle::TABLES,
@@ -382,6 +392,10 @@ impl<'data> TableReader<'data> {
 			_assembly_processor: self.read_table::<AssemblyProcessor>()?,
 			_assembly_os: self.read_table::<AssemblyOs>()?,
 			assembly_ref: self.read_table::<AssemblyRef>()?,
+			_assembly_ref_processor: self.read_table::<AssemblyRefProcessor>()?,
+			_assembly_ref_os: self.read_table::<AssemblyRefOs>()?,
+			file: self.read_table::<File>()?,
+			exported_type: self.read_table::<ExportedType>()?,
 		})
 	}
 
@@ -441,6 +455,13 @@ impl<'data> TableReader<'data> {
 		match self.wide_table_handles[TableType::ModuleRef as usize] {
 			true => Ok(ModuleRefHandle(self._read::<u32>()? as usize)),
 			false => Ok(ModuleRefHandle(self._read::<u16>()? as usize)),
+		}
+	}
+
+	pub fn read_assembly_ref_handle(&mut self) -> Result<AssemblyRefHandle, TableReaderError> {
+		match self.wide_table_handles[TableType::AssemblyRef as usize] {
+			true => Ok(AssemblyRefHandle(self._read::<u32>()? as usize)),
+			false => Ok(AssemblyRefHandle(self._read::<u16>()? as usize)),
 		}
 	}
 
@@ -694,6 +715,29 @@ impl<'data> TableReader<'data> {
 			_ => {
 				return Err(TableReaderError::BadImageFormat(format!(
 					"Invalid MemberForwardedHandle tag {}",
+					tag
+				)))
+			}
+		})
+	}
+
+	pub fn read_implementation_handle(&mut self) -> Result<ImplementationHandle, TableReaderError> {
+		let data = match self.wide_implementation {
+			true => self._read::<u32>()? as usize,
+			false => self._read::<u16>()? as usize,
+		};
+
+		let tag = data & ImplementationHandle::TAG_MASK;
+		let index = (data & !ImplementationHandle::TAG_MASK)
+			>> (ImplementationHandle::TAG_MASK.count_ones());
+
+		Ok(match tag {
+			0 => ImplementationHandle::FileHandle(FileHandle(index)),
+			1 => ImplementationHandle::AssemblyRefHandle(AssemblyRefHandle(index)),
+			2 => ImplementationHandle::ExportedTypeHandle(ExportedTypeHandle(index)),
+			_ => {
+				return Err(TableReaderError::BadImageFormat(format!(
+					"Invalid ImplementationHandle tag {}",
 					tag
 				)))
 			}

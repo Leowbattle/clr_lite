@@ -1,7 +1,11 @@
 use crate::metadata::tables::*;
 
 #[derive(Debug)]
-pub struct File {}
+pub struct File {
+	pub contains_metadata: bool,
+	pub name: StringHandle,
+	pub hash_value: BlobHandle,
+}
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct FileHandle(pub(crate) usize);
@@ -23,6 +27,14 @@ impl TableRow for File {
 	const TYPE: TableType = TableType::File;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<File, TableReaderError> {
-		unimplemented!()
+		Ok(File {
+			contains_metadata: if reader._read::<u32>()? == 0 {
+				true
+			} else {
+				false
+			},
+			name: reader.read_string_handle()?,
+			hash_value: reader.read_blob_handle()?,
+		})
 	}
 }

@@ -192,8 +192,8 @@ impl<'data> PeInfo<'data> {
 				br.read::<Pe32OptionalHeader>()
 					.ok_or_else(|| PeError::BadImageFormat("Invalid PE file".to_string()))?,
 			),
-			0x20b => PeOptionalHeader::Pe32(
-				br.read::<Pe32OptionalHeader>()
+			0x20b => PeOptionalHeader::Pe64(
+				br.read::<Pe64OptionalHeader>()
 					.ok_or_else(|| PeError::BadImageFormat("Invalid PE file".to_string()))?,
 			),
 			_ => return Err(PeError::BadImageFormat("Invalid PE file".to_string())),

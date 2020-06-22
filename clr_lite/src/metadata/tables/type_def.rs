@@ -45,7 +45,7 @@ pub struct TypeAttributes {
 }
 
 impl TypeAttributes {
-	fn from_raw(raw: u32) -> Result<TypeAttributes, TableReaderError> {
+	pub(crate) fn from_raw(raw: u32) -> Result<TypeAttributes, TableReaderError> {
 		Ok(TypeAttributes {
 			visibility: match raw & 0x7 {
 				0x0 => TypeVisibility::NonPublic,

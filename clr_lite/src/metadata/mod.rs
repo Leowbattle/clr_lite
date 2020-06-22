@@ -174,11 +174,14 @@ impl<'data> Metadata<'data> {
 				[strings_heap.offset as usize..(strings_heap.offset + strings_heap.size) as usize],
 		);
 
-		let user_strings_heap = user_strings_heap.unwrap();
-		let user_strings_heap = UserStringsHeap::new(
-			&metadata[user_strings_heap.offset as usize
-				..(user_strings_heap.offset + user_strings_heap.size) as usize],
-		);
+		let user_strings_heap = if let Some(user_strings_heap) = user_strings_heap {
+			UserStringsHeap::new(
+				&metadata[user_strings_heap.offset as usize
+					..(user_strings_heap.offset + user_strings_heap.size) as usize],
+			)
+		} else {
+			UserStringsHeap::new(&metadata[0..0])
+		};
 
 		let blob_heap = blob_heap.unwrap();
 		let blob_heap = BlobHeap::new(
