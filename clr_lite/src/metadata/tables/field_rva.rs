@@ -1,7 +1,11 @@
+///! ECMA-335 II.22.18
 use crate::metadata::tables::*;
 
 #[derive(Debug)]
-pub struct FieldRva {}
+pub struct FieldRva {
+	pub rva: Rva,
+	pub field: FieldHandle,
+}
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct FieldRvaHandle(pub(crate) usize);
@@ -23,6 +27,9 @@ impl TableRow for FieldRva {
 	const TYPE: TableType = TableType::FieldRva;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<FieldRva, TableReaderError> {
-		unimplemented!()
+		Ok(FieldRva {
+			rva: reader.read_rva()?,
+			field: reader.read_field_handle()?,
+		})
 	}
 }

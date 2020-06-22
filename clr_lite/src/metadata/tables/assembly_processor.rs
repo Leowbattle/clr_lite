@@ -1,7 +1,10 @@
+///! ECMA-335 II.22.4
 use crate::metadata::tables::*;
 
 #[derive(Debug)]
-pub struct AssemblyProcessor {}
+pub struct AssemblyProcessor {
+	processor: u32,
+}
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct AssemblyProcessorHandle(pub(crate) usize);
@@ -23,6 +26,8 @@ impl TableRow for AssemblyProcessor {
 	const TYPE: TableType = TableType::AssemblyProcessor;
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<AssemblyProcessor, TableReaderError> {
-		unimplemented!()
+		Ok(AssemblyProcessor {
+			processor: reader._read::<u32>()?,
+		})
 	}
 }

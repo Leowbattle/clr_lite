@@ -5,23 +5,17 @@ fn main() {
 	let data = include_bytes!(
 		"../../tests/metadata/tables/MethodImplTests/bin/Debug/netcoreapp3.1/MethodImplTests.dll"
 	);
-	let data =
-		include_bytes!("C:/Program Files (x86)/steam/steamapps/common/Terraria/Terraria.exe");
+	// let data =
+	// 	include_bytes!("C:/Program Files (x86)/steam/steamapps/common/Terraria/Terraria.exe");
 
 	let start = std::time::Instant::now();
 	let metadata = Metadata::read(data).unwrap();
 	let end = std::time::Instant::now();
 	let d = end - start;
 
-	for i in metadata.tables().impl_map.rows() {
-		println!(
-			"{} in {}",
-			metadata.strings().get(i.name).unwrap(),
-			metadata
-				.strings()
-				.get(metadata.tables().module_ref[i.module].name)
-				.unwrap()
-		);
+	for r in metadata.tables().assembly_ref.rows() {
+		println!("{}", metadata.strings().get(r.name).unwrap());
 	}
+
 	println!("{:?}", d);
 }

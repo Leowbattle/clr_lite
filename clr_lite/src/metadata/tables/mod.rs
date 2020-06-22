@@ -151,7 +151,7 @@ pub struct Tables {
 	pub constant: Table<Constant>,
 	pub custom_attribute: Table<CustomAttribute>,
 	pub field_marshal: Table<FieldMarshal>,
-	pub decl_security: Table<DeclSecurity>,
+	decl_security: Table<DeclSecurity>,
 	pub class_layout: Table<ClassLayout>,
 	pub field_layout: Table<FieldLayout>,
 	pub standalone_sig: Table<StandaloneSig>,
@@ -164,6 +164,11 @@ pub struct Tables {
 	pub module_ref: Table<ModuleRef>,
 	pub type_spec: Table<TypeSpec>,
 	pub impl_map: Table<ImplMap>,
+	pub field_rva: Table<FieldRva>,
+	pub assembly: Table<Assembly>,
+	_assembly_processor: Table<AssemblyProcessor>,
+	_assembly_os: Table<AssemblyOs>,
+	pub assembly_ref: Table<AssemblyRef>,
 }
 
 pub trait TableRow: Sized + std::fmt::Debug {
@@ -372,6 +377,11 @@ impl<'data> TableReader<'data> {
 			module_ref: self.read_table::<ModuleRef>()?,
 			type_spec: self.read_table::<TypeSpec>()?,
 			impl_map: self.read_table::<ImplMap>()?,
+			field_rva: self.read_table::<FieldRva>()?,
+			assembly: self.read_table::<Assembly>()?,
+			_assembly_processor: self.read_table::<AssemblyProcessor>()?,
+			_assembly_os: self.read_table::<AssemblyOs>()?,
+			assembly_ref: self.read_table::<AssemblyRef>()?,
 		})
 	}
 
