@@ -1,4 +1,7 @@
+///! II.23.2
 use binary_reader::*;
+
+use crate::metadata::MetadataToken;
 
 #[derive(Debug)]
 pub enum BlobReaderError {
@@ -51,5 +54,9 @@ impl<'data> BlobReader<'data> {
 			.ok_or_else(|| {
 				BlobReaderError::BadBlob("Unable to read UTF16 string from blob".to_string())
 			})
+	}
+
+	pub fn read_metadata_token(&mut self) -> Result<MetadataToken, BlobReaderError> {
+		Ok(MetadataToken(self.read_compressed_u32()?))
 	}
 }

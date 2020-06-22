@@ -1,0 +1,11 @@
+AssemblyRef: PublicKeyOrToken, HashValue
+Assembly: PublicKey
+Constant: Value
+CustomAttribute: Value
+File: HashValue
+MemberRef: Signature
+MethodDef: Signature
+MethodSpec: Instantiation
+Property: Signature
+StandaloneSig: Signature
+TypeSpec: Signature

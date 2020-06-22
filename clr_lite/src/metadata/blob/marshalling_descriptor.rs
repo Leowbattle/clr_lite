@@ -1,3 +1,4 @@
+///! ECMA-335 II.23.4
 use super::*;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -31,12 +32,8 @@ pub enum MarshallingDescriptor {
 	},
 }
 
-pub trait ReadMarshallingDescriptor {
-	fn read_marshalling_descriptor(&mut self) -> Result<MarshallingDescriptor, BlobReaderError>;
-}
-
 impl BlobReader<'_> {
-	fn read_marshalling_descriptor_scalar(
+	pub fn read_marshalling_descriptor_scalar(
 		&mut self,
 	) -> Result<MarshallingDescriptorScalar, BlobReaderError> {
 		let descriptor = self.read::<u8>()?;
@@ -66,10 +63,10 @@ impl BlobReader<'_> {
 			}
 		})
 	}
-}
 
-impl ReadMarshallingDescriptor for BlobReader<'_> {
-	fn read_marshalling_descriptor(&mut self) -> Result<MarshallingDescriptor, BlobReaderError> {
+	pub fn read_marshalling_descriptor(
+		&mut self,
+	) -> Result<MarshallingDescriptor, BlobReaderError> {
 		if self.peek::<u8>()? == 0x2a {
 			self.reader.advance(1);
 			let element_type = self.read_marshalling_descriptor_scalar()?;
