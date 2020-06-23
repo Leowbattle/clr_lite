@@ -3,7 +3,6 @@ Assembly: PublicKey
 Constant: Value
 CustomAttribute: Value
 File: HashValue
-MemberRef: Signature
 MethodSpec: Instantiation
 Property: Signature
 StandaloneSig: Signature

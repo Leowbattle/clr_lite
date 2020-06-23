@@ -12,15 +12,15 @@ fn main() {
 
 	let metadata = Metadata::read(data).unwrap();
 
-	for m in metadata.tables().member_ref.rows() {
-		println!("{}:", metadata.strings().get(m.name).unwrap());
+	for p in metadata.tables().property.rows() {
 		println!(
-			"\t{:?}\n",
+			"{}, {:?}",
+			metadata.strings().get(p.name).unwrap(),
 			metadata
 				.blob()
-				.new_reader(m.signature)
+				.new_reader(p.signature)
 				.unwrap()
-				.read_method_signature()
+				.read_property_signature()
 		);
 	}
 }

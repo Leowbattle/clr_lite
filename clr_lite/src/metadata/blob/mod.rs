@@ -18,3 +18,6 @@ pub use type_def_or_ref::*;
 
 pub mod method_signature;
 pub use method_signature::*;
+
+pub mod property_signature;
+pub use property_signature::*;
