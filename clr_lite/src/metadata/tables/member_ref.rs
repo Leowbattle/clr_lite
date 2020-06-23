@@ -3,7 +3,7 @@ use crate::metadata::tables::*;
 
 #[derive(Debug)]
 pub struct MemberRef {
-	pub class: MemberRefParentHandle,
+	pub parent: MemberRefParentHandle,
 	pub name: StringHandle,
 	pub signature: BlobHandle,
 }
@@ -29,7 +29,7 @@ impl TableRow for MemberRef {
 
 	fn read_row(reader: &mut TableReader<'_>) -> Result<MemberRef, TableReaderError> {
 		Ok(MemberRef {
-			class: reader.read_member_ref_parent_handle()?,
+			parent: reader.read_member_ref_parent_handle()?,
 			name: reader.read_string_handle()?,
 			signature: reader.read_blob_handle()?,
 		})
@@ -54,7 +54,7 @@ mod tests {
 			.iter()
 			.map(|m| {
 				(
-					match m.class {
+					match m.parent {
 						MemberRefParentHandle::TypeRefHandle(t) => metadata
 							.strings()
 							.get(metadata.tables().type_ref[t].name)

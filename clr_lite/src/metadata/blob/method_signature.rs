@@ -2,7 +2,7 @@
 use super::*;
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct MethodDefSignature {
+pub struct MethodSignature {
 	pub instance: bool,
 	pub explicit_this: bool,
 	pub vararg: bool,
@@ -12,7 +12,7 @@ pub struct MethodDefSignature {
 }
 
 impl BlobReader<'_> {
-	pub fn read_method_def_signature(&mut self) -> Result<MethodDefSignature, BlobReaderError> {
+	pub fn read_method_signature(&mut self) -> Result<MethodSignature, BlobReaderError> {
 		let next = self.read::<u8>()?;
 		let instance = next & 0x20 == 0x20;
 		let explicit_this = next & 0x40 == 0x40;
@@ -37,7 +37,7 @@ impl BlobReader<'_> {
 			params.into_boxed_slice()
 		};
 
-		Ok(MethodDefSignature {
+		Ok(MethodSignature {
 			instance,
 			explicit_this,
 			vararg,
@@ -57,7 +57,7 @@ mod tests {
 
 	#[test]
 	fn test_method_def_signature() {
-		let data = include_bytes!("../../../../tests/metadata/blob/MethodDefSignatureTests/bin/Debug/netcoreapp3.1/MethodDefSignatureTests.dll");
+		let data = include_bytes!("../../../../tests/metadata/blob/MethodSignatureTests/bin/Debug/netcoreapp3.1/MethodSignatureTests.dll");
 		let metadata = Metadata::read(data).unwrap();
 
 		let method_defs = metadata
@@ -72,7 +72,7 @@ mod tests {
 						.blob()
 						.new_reader(m.signature)
 						.unwrap()
-						.read_method_def_signature()
+						.read_method_signature()
 						.unwrap(),
 				)
 			})
@@ -80,7 +80,7 @@ mod tests {
 
 		assert_eq!(
 			method_defs["Basic"],
-			MethodDefSignature {
+			MethodSignature {
 				instance: true,
 				explicit_this: false,
 				vararg: false,
@@ -92,7 +92,7 @@ mod tests {
 
 		assert_eq!(
 			method_defs["Static"],
-			MethodDefSignature {
+			MethodSignature {
 				instance: false,
 				explicit_this: false,
 				vararg: false,
@@ -104,7 +104,7 @@ mod tests {
 
 		assert_eq!(
 			method_defs["Generic"],
-			MethodDefSignature {
+			MethodSignature {
 				instance: true,
 				explicit_this: false,
 				vararg: false,
@@ -116,7 +116,7 @@ mod tests {
 
 		assert_eq!(
 			method_defs["ReturnsInt"],
-			MethodDefSignature {
+			MethodSignature {
 				instance: true,
 				explicit_this: false,
 				vararg: false,
@@ -128,7 +128,7 @@ mod tests {
 
 		assert_eq!(
 			method_defs["Add"],
-			MethodDefSignature {
+			MethodSignature {
 				instance: true,
 				explicit_this: false,
 				vararg: false,

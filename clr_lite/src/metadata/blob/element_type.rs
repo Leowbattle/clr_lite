@@ -40,6 +40,7 @@ pub enum ElementType {
 	/// One-dimensional array
 	SzArray(Box<ElementType>),
 	MethodGenericParam(usize),
+	VarargSentinel,
 }
 
 impl BlobReader<'_> {
@@ -86,6 +87,7 @@ impl BlobReader<'_> {
 			0x1c => ElementType::Object,
 			0x1d => ElementType::SzArray(Box::new(self.read_element_type()?)),
 			0x1e => ElementType::MethodGenericParam(self.read_compressed_u32()? as usize),
+			0x41 => ElementType::VarargSentinel,
 			_ => {
 				return Err(BlobReaderError::BadBlob(format!(
 					"Invalid ELEMENT_TYPE {:#x}",

@@ -91,7 +91,7 @@ mod tests {
 								.0
 						}
 						CustomAttributeTypeHandle::MemberRefHandle(m) => {
-							match metadata.tables().member_ref[m].class {
+							match metadata.tables().member_ref[m].parent {
 								MemberRefParentHandle::TypeRefHandle(t) => metadata
 									.strings()
 									.get(metadata.tables().type_ref[t].name)
