@@ -2,7 +2,7 @@
 use super::*;
 use crate::metadata::tables::TypeDefOrRefHandle;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum ElementType {
 	Void,
 	Bool,

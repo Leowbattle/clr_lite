@@ -1,6 +1,6 @@
 use crate::metadata::tables::*;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum TypeDefOrRefHandle {
 	TypeDefHandle(TypeDefHandle),
 	TypeRefHandle(TypeRefHandle),

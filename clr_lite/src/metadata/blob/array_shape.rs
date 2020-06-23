@@ -1,7 +1,7 @@
 ///! ECMA-335 II.23.2.13
 use super::*;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ArrayShape {
 	pub rank: usize,
 	pub sizes: Box<[usize]>,

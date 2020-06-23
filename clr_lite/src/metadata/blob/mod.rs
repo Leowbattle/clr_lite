@@ -21,3 +21,9 @@ pub use method_signature::*;
 
 pub mod property_signature;
 pub use property_signature::*;
+
+pub mod type_spec;
+pub use type_spec::*;
+
+pub mod method_spec;
+pub use method_spec::*;
