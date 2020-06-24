@@ -7,14 +7,12 @@
 			"problemMatcher": [
 				"$rustc"
 			],
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			},
+			"group": "build",
 			"label": "Rust: cargo build - clr_lite"
 		},
 		{
 			"label": "copy_dlls",
+			"group": "build",
 			"type": "shell",
 			"command": "python",
 			"args": [
@@ -27,7 +25,12 @@
 			"dependsOn": [
 				"copy_dlls",
 				"Rust: cargo build - clr_lite"
-			]
+			],
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
 		}
 	]
 }

@@ -4,28 +4,88 @@ use crate::vm::*;
 use std::rc::{Rc, Weak};
 
 #[derive(Clone)]
-pub struct Assembly(Rc<AssemblyInternal>);
+pub struct Assembly(pub(crate) Rc<AssemblyInternal>);
 
 impl Assembly {
-	pub(crate) fn load(clr: ClrLite, data: &[u8]) -> Result<Assembly, String> {
+	pub(crate) fn load(mut clr: ClrLite, data: &[u8]) -> Result<Assembly, String> {
 		let metadata = Metadata::read(data).map_err(|e| e.to_string())?;
 		let name = metadata
 			.strings()
 			.get(metadata.tables().assembly[0.into()].name)
-			.unwrap();
+			.unwrap()
+			.to_string();
 
-		Ok(Assembly(Rc::new(AssemblyInternal {
+		// Load all unloaded assemblies referenced by this assembly
+		for r in metadata.tables().assembly_ref.rows().iter() {
+			let ref_name = metadata
+				.strings()
+				.get(r.name)
+				.ok_or_else(|| format!("{} contains invalid assembly references", name))?;
+
+			// If this reference is not already loaded, load it.
+			if !clr.assemblies().any(|a| a.name() == ref_name) {
+				clr.load_assembly(ref_name)?;
+			}
+		}
+
+		// Load type names
+		let type_count = metadata.tables().type_def.rows().len();
+		let mut types = Vec::with_capacity(type_count);
+		for t in metadata.tables().type_def.rows() {
+			types.push(Type::load(clr.clone(), t, &metadata)?);
+		}
+
+		// Resolve types
+		for i in 0..type_count {
+			types[i].resolve(
+				clr.clone(),
+				&metadata.tables().type_def[i.into()],
+				&metadata,
+			)?;
+		}
+
+		let a = Assembly(Rc::new(AssemblyInternal {
 			clr: Rc::downgrade(&clr.0),
-			name: name.to_string(),
-		})))
+			name,
+			types,
+		}));
+
+		clr.0.borrow_mut().assemblies.push(a.clone());
+
+		Ok(a)
 	}
 
 	pub fn name<'a>(&'a self) -> &'a str {
 		&self.0.name
 	}
+
+	/// Iterate over all types in this assembly
+	pub fn types(&self) -> impl Iterator<Item = Type> {
+		Types {
+			assembly: self.clone(),
+			current: 0,
+		}
+	}
 }
 
-pub struct AssemblyInternal {
+/// Iterator over all types in an assembly
+struct Types {
+	assembly: Assembly,
+	current: usize,
+}
+
+impl Iterator for Types {
+	type Item = Type;
+
+	fn next(&mut self) -> Option<Self::Item> {
+		let next = self.assembly.0.types.get(self.current)?.clone();
+		self.current += 1;
+		Some(next)
+	}
+}
+
+pub(crate) struct AssemblyInternal {
 	clr: Weak<RefCell<ClrInternal>>,
 	name: String,
+	types: Vec<Type>,
 }

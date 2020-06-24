@@ -2,9 +2,7 @@ import shutil
 import sys
 import os
 
-dlls = [
-    "System.Runtime"
-]
+dlls = ["System.Runtime", "System.Console"]
 
 profile = sys.argv[1]
 out_dir = os.path.abspath("target/{}/libraries".format(profile))

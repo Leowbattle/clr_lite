@@ -3,9 +3,8 @@ use reflection::*;
 
 use std::cell::RefCell;
 use std::env;
-use std::ffi::OsStr;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 #[derive(Clone)]
@@ -13,11 +12,10 @@ pub struct ClrLite(pub(crate) Rc<RefCell<ClrInternal>>);
 
 impl ClrLite {
 	pub fn new_runtime() -> Result<ClrLite, String> {
-		let mut rt = ClrLite(Rc::new(RefCell::new(ClrInternal::new_runtime()?)));
-		rt.load_default_assemblies();
-		Ok(rt)
+		Ok(ClrLite(Rc::new(RefCell::new(ClrInternal::new_runtime()?))))
 	}
 
+	/// Iterate over all loaded assemblies
 	pub fn assemblies(&self) -> impl Iterator<Item = Assembly> {
 		Assemblies {
 			clr: self.clone(),
@@ -31,22 +29,16 @@ impl ClrLite {
 			.borrow()
 			.resolve_assembly_name(name)
 			.ok_or_else(|| format!("Could not locate assembly with name {}", name))?;
-
-		let data = fs::read(path).map_err(|e| e.to_string())?;
-		let a = Assembly::load(self.clone(), &data)?;
-		self.0.borrow_mut().assemblies.push(a.clone());
-		Ok(a)
+		self.load_assembly_from_path(path)
 	}
 
-	fn load_default_assemblies(&mut self) -> Result<(), String> {
-		let libs = ["System.Runtime"];
-		for lib in libs.iter() {
-			self.load_assembly(lib)?;
-		}
-		Ok(())
+	pub fn load_assembly_from_path(&mut self, path: impl AsRef<Path>) -> Result<Assembly, String> {
+		let data = fs::read(path).map_err(|e| e.to_string())?;
+		Assembly::load(self.clone(), &data)
 	}
 }
 
+/// Iterator over all loaded assemblies
 struct Assemblies {
 	clr: ClrLite,
 	current: usize,
@@ -65,6 +57,7 @@ impl Iterator for Assemblies {
 pub(crate) struct ClrInternal {
 	assembly_load_paths: Vec<PathBuf>,
 	assemblies: Vec<Assembly>,
+	types: Vec<Type>,
 }
 
 impl ClrInternal {
@@ -77,6 +70,7 @@ impl ClrInternal {
 
 		Ok(ClrInternal {
 			assembly_load_paths: vec![exe_dir, lib_dir],
+			types: vec![],
 			assemblies: vec![],
 		})
 	}
