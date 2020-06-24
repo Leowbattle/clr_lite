@@ -12,6 +12,22 @@
 				"isDefault": true
 			},
 			"label": "Rust: cargo build - clr_lite"
+		},
+		{
+			"label": "copy_dlls",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"libraries/copy_dlls.py",
+				"debug"
+			]
+		},
+		{
+			"label": "build",
+			"dependsOn": [
+				"copy_dlls",
+				"Rust: cargo build - clr_lite"
+			]
 		}
 	]
 }

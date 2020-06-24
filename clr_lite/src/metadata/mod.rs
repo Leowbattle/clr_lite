@@ -23,6 +23,14 @@ pub enum MetadataError {
 	BadImageFormat(String),
 }
 
+impl ToString for MetadataError {
+	fn to_string(&self) -> String {
+		match self {
+			MetadataError::BadImageFormat(s) => s.clone(),
+		}
+	}
+}
+
 use crate::pe::*;
 
 pub struct Metadata<'data> {
