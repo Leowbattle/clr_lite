@@ -8,6 +8,14 @@ pub enum BlobReaderError {
 	BadBlob(String),
 }
 
+impl ToString for BlobReaderError {
+	fn to_string(&self) -> String {
+		match self {
+			BlobReaderError::BadBlob(s) => s.clone(),
+		}
+	}
+}
+
 pub struct BlobReader<'data> {
 	pub(crate) reader: BinaryReader<'data>,
 }

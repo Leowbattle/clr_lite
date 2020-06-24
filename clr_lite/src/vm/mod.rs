@@ -36,6 +36,17 @@ impl ClrLite {
 		let data = fs::read(path).map_err(|e| e.to_string())?;
 		Assembly::load(self.clone(), &data)
 	}
+
+	pub fn get_type(&self, name: &str) -> Option<Type> {
+		Some(
+			self.0
+				.borrow()
+				.types
+				.iter()
+				.find(|t| t.full_name() == name)?
+				.clone(),
+		)
+	}
 }
 
 /// Iterator over all loaded assemblies

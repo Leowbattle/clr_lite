@@ -31,17 +31,13 @@ impl Assembly {
 		// Load type names
 		let type_count = metadata.tables().type_def.rows().len();
 		let mut types = Vec::with_capacity(type_count);
-		for t in metadata.tables().type_def.rows() {
-			types.push(Type::load(clr.clone(), t, &metadata)?);
+		for i in 0..type_count {
+			types.push(Type::load(clr.clone(), i, &metadata)?);
 		}
 
 		// Resolve types
 		for i in 0..type_count {
-			types[i].resolve(
-				clr.clone(),
-				&metadata.tables().type_def[i.into()],
-				&metadata,
-			)?;
+			types[i].resolve(clr.clone(), i, &metadata)?;
 		}
 
 		let a = Assembly(Rc::new(AssemblyInternal {
