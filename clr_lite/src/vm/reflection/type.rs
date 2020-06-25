@@ -1,5 +1,5 @@
 use crate::metadata::blob::ElementType;
-use crate::metadata::tables::{TypeDefHandle, TypeDefOrRefHandle};
+use crate::metadata::tables::{TypeDefHandle, TypeDefOrRefHandle, TypeSemantics};
 use crate::metadata::*;
 use crate::vm::*;
 
@@ -32,6 +32,8 @@ impl Type {
 			name,
 			namespace,
 			full_name,
+			kind: RefCell::new(None),
+			is_abstract: def.attributes.is_abstract,
 			base: RefCell::new(None),
 			fields: RefCell::new(vec![]),
 		}));
@@ -50,6 +52,7 @@ impl Type {
 		metadata: &'a Metadata<'a>,
 	) -> Result<(), String> {
 		self.resolve_base(clr.clone(), i, metadata)?;
+		self.resolve_kind(clr.clone(), i, metadata)?;
 		self.resolve_fields(clr.clone(), i, metadata)?;
 
 		Ok(())
@@ -74,6 +77,32 @@ impl Type {
 			.ok_or_else(|| format!("Unable to find base type for {}", self.full_name()))?;
 
 		*self.0.base.borrow_mut() = Some(base);
+
+		Ok(())
+	}
+
+	fn resolve_kind<'a>(
+		&mut self,
+		clr: ClrLite,
+		i: usize,
+		metadata: &'a Metadata<'a>,
+	) -> Result<(), String> {
+		let def = &metadata.tables().type_def[i.into()];
+
+		let kind = if let TypeSemantics::Interface = def.attributes.semantics {
+			TypeKind::Interface
+		} else if let None = self.base() {
+			TypeKind::Class
+		} else {
+			match self.base().unwrap().full_name() {
+				"System.ValueType" => TypeKind::Struct,
+				"System.Array" => TypeKind::Array,
+				"System.Enum" => TypeKind::Enum,
+				_ => TypeKind::Class,
+			}
+		};
+
+		*self.0.kind.borrow_mut() = Some(kind);
 
 		Ok(())
 	}
@@ -197,6 +226,8 @@ impl Type {
 			name: format!("{}[]", element.name()),
 			namespace: element.namespace().to_string(),
 			full_name,
+			kind: RefCell::new(Some(TypeKind::Array)),
+			is_abstract: false,
 			base: RefCell::new(clr.get_type("System.Array")),
 			fields: RefCell::new(vec![]),
 		}));
@@ -228,6 +259,14 @@ impl Type {
 			current: 0,
 		}
 	}
+
+	pub fn is_abstract(&self) -> bool {
+		self.0.is_abstract
+	}
+
+	pub fn kind(&self) -> TypeKind {
+		self.0.kind.borrow().unwrap()
+	}
 }
 
 impl fmt::Display for Type {
@@ -251,6 +290,21 @@ impl Iterator for Fields {
 	}
 }
 
+#[derive(Copy, Clone, Debug)]
+pub enum TypeKind {
+	Class,
+	Interface,
+	Struct,
+	Enum,
+	Array,
+}
+
+impl fmt::Display for TypeKind {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "{:?}", self)
+	}
+}
+
 // The reason that some fields are wrapped in RefCell and not the whole struct, as
 // pub struct Field(Rc<RefCell<FieldInternal>>) is because the name, namespace, etc
 // methods return references to the fields of this struct, but you can't return a
@@ -261,6 +315,8 @@ pub(crate) struct TypeInternal {
 	name: String,
 	namespace: String,
 	full_name: String,
+	kind: RefCell<Option<TypeKind>>,
+	is_abstract: bool,
 	base: RefCell<Option<Type>>,
 	fields: RefCell<Vec<Field>>,
 }

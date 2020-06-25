@@ -8,9 +8,9 @@ fn main() {
 		println!("{}", a.name());
 		for t in a.types() {
 			if let Some(base) = t.base() {
-				println!("\t{} : {}", t, base);
+				println!("\t{} {} : {}", t.kind(), t, base);
 			} else {
-				println!("\t{}", t);
+				println!("\t{} {}", t.kind(), t);
 			}
 			for f in t.fields() {
 				println!("\t\t{}", f);
