@@ -2,6 +2,7 @@ pub mod reflection;
 use reflection::*;
 
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -23,6 +24,14 @@ impl ClrLite {
 		}
 	}
 
+	// Iterate over all loaded types
+	pub fn types(&self) -> impl Iterator<Item = Type> {
+		Types {
+			clr: self.clone(),
+			current: 0,
+		}
+	}
+
 	pub fn load_assembly(&mut self, name: &str) -> Result<Assembly, String> {
 		let path = self
 			.0
@@ -38,14 +47,7 @@ impl ClrLite {
 	}
 
 	pub fn get_type(&self, name: &str) -> Option<Type> {
-		Some(
-			self.0
-				.borrow()
-				.types
-				.iter()
-				.find(|t| t.full_name() == name)?
-				.clone(),
-		)
+		Some(self.0.borrow().type_map.get(name)?.clone())
 	}
 }
 
@@ -65,10 +67,26 @@ impl Iterator for Assemblies {
 	}
 }
 
+struct Types {
+	clr: ClrLite,
+	current: usize,
+}
+
+impl Iterator for Types {
+	type Item = Type;
+
+	fn next(&mut self) -> Option<Self::Item> {
+		let next = self.clr.0.borrow().types.get(self.current)?.clone();
+		self.current += 1;
+		Some(next)
+	}
+}
+
 pub(crate) struct ClrInternal {
 	assembly_load_paths: Vec<PathBuf>,
 	assemblies: Vec<Assembly>,
 	types: Vec<Type>,
+	type_map: HashMap<String, Type>,
 }
 
 impl ClrInternal {
@@ -81,8 +99,9 @@ impl ClrInternal {
 
 		Ok(ClrInternal {
 			assembly_load_paths: vec![exe_dir, lib_dir],
-			types: vec![],
 			assemblies: vec![],
+			types: vec![],
+			type_map: HashMap::new(),
 		})
 	}
 
@@ -104,5 +123,10 @@ impl ClrInternal {
 			}
 		}
 		None
+	}
+
+	pub(crate) fn add_type(&mut self, t: Type) {
+		self.types.push(t.clone());
+		self.type_map.insert(t.full_name().to_string(), t);
 	}
 }

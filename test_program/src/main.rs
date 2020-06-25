@@ -8,10 +8,15 @@ fn main() {
 		println!("{}", a.name());
 		for t in a.types() {
 			if let Some(base) = t.base() {
-				println!("\t{} : {}", t.full_name(), base.full_name());
+				println!("\t{} : {}", t, base);
 			} else {
-				println!("\t{}", t.full_name());
+				println!("\t{}", t);
+			}
+			for f in t.fields() {
+				println!("\t\t{}", f);
 			}
 		}
 	}
+
+	println!("number of loaded types = {}", rt.types().count());
 }

@@ -2,5 +2,6 @@
 {
 	public abstract class Enum : ValueType
 	{
+		
 	}
 }

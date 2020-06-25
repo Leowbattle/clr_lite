@@ -4,6 +4,7 @@ use crate::metadata::*;
 use crate::vm::*;
 
 use std::cell::RefCell;
+use std::fmt;
 use std::rc::{Rc, Weak};
 
 #[derive(Clone)]
@@ -35,7 +36,7 @@ impl Type {
 			fields: RefCell::new(vec![]),
 		}));
 
-		clr.0.borrow_mut().types.push(t.clone());
+		clr.0.borrow_mut().add_type(t.clone());
 
 		Ok(t)
 	}
@@ -159,8 +160,8 @@ impl Type {
 			ElementType::Float => clr.get_type("System.Single").unwrap(),
 			ElementType::Double => clr.get_type("System.Double").unwrap(),
 			ElementType::String => clr.get_type("System.String").unwrap(),
-			ElementType::Pointer(e) => unimplemented!("Pointers not yet supported"),
-			ElementType::Reference(e) => unimplemented!("References not yet supported"),
+			ElementType::Pointer(t) => unimplemented!("Pointers not yet supported"),
+			ElementType::Reference(t) => unimplemented!("References not yet supported"),
 			ElementType::ValueType(t) | ElementType::Class(t) => {
 				let name = Type::type_def_or_ref_name(clr.clone(), metadata, t)
 					.ok_or_else(|| "Unable to locate type".to_string())?;
@@ -168,8 +169,41 @@ impl Type {
 				clr.get_type(&name)
 					.ok_or_else(|| format!("Unable to locate type {:?}", name))?
 			}
-			_ => return Err("Invalid element type".to_string()),
+			ElementType::TypeGenericParam(i) => unimplemented!("Generics not yet supported"),
+			ElementType::Array { .. } => unimplemented!("Non-vector arrays not yet supported"),
+			ElementType::Generic { .. } => unimplemented!("Generics not yet supported"),
+			ElementType::TypedReference => unimplemented!("Typed references not yet supported"),
+			ElementType::IntPtr => clr.get_type("System.IntPtr").unwrap(),
+			ElementType::UIntPtr => clr.get_type("System.UIntPtr").unwrap(),
+			ElementType::FnPtr => unimplemented!("Function pointers not yet supported"),
+			ElementType::Object => clr.get_type("System.Object").unwrap(),
+			ElementType::SzArray(et) => Type::get_or_create_array_type(
+				clr.clone(),
+				Type::get_type_for_element_type(clr, metadata, *et)?,
+			),
+			ElementType::MethodGenericParam(i) => unimplemented!("Generics not yet supported"),
+			_ => return Err(format!("Invalid element type {:?}", e)),
 		})
+	}
+
+	fn get_or_create_array_type(clr: ClrLite, element: Type) -> Type {
+		let full_name = format!("{}[]", element.full_name());
+		if let Some(t) = clr.get_type(&full_name) {
+			return t;
+		}
+
+		let t = Type(Rc::new(TypeInternal {
+			clr: Rc::downgrade(&clr.0),
+			name: format!("{}[]", element.name()),
+			namespace: element.namespace().to_string(),
+			full_name,
+			base: RefCell::new(clr.get_type("System.Array")),
+			fields: RefCell::new(vec![]),
+		}));
+
+		clr.0.borrow_mut().add_type(t.clone());
+
+		t
 	}
 
 	pub fn name<'a>(&'a self) -> &'a str {
@@ -186,6 +220,34 @@ impl Type {
 
 	pub fn base(&self) -> Option<Type> {
 		self.0.base.borrow().clone()
+	}
+
+	pub fn fields(&self) -> impl Iterator<Item = Field> {
+		Fields {
+			t: self.clone(),
+			current: 0,
+		}
+	}
+}
+
+impl fmt::Display for Type {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "{}", self.full_name())
+	}
+}
+
+struct Fields {
+	t: Type,
+	current: usize,
+}
+
+impl Iterator for Fields {
+	type Item = Field;
+
+	fn next(&mut self) -> Option<Self::Item> {
+		let next = self.t.0.fields.borrow().get(self.current)?.clone();
+		self.current += 1;
+		Some(next)
 	}
 }
 
