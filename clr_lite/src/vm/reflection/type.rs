@@ -3,8 +3,9 @@ use crate::metadata::tables::{TypeDefHandle, TypeDefOrRefHandle, TypeSemantics};
 use crate::metadata::*;
 use crate::vm::*;
 
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 use std::fmt;
+use std::ops::Deref;
 use std::rc::{Rc, Weak};
 
 #[derive(Clone)]
@@ -36,6 +37,7 @@ impl Type {
 			is_abstract: def.attributes.is_abstract,
 			base: RefCell::new(None),
 			fields: RefCell::new(vec![]),
+			methods: RefCell::new(vec![]),
 		}));
 
 		clr.0.borrow_mut().add_type(t.clone());
@@ -54,6 +56,7 @@ impl Type {
 		self.resolve_base(clr.clone(), i, metadata)?;
 		self.resolve_kind(clr.clone(), i, metadata)?;
 		self.resolve_fields(clr.clone(), i, metadata)?;
+		self.resolve_methods(clr.clone(), i, metadata)?;
 
 		Ok(())
 	}
@@ -140,6 +143,33 @@ impl Type {
 		Ok(())
 	}
 
+	fn resolve_methods<'a>(
+		&mut self,
+		clr: ClrLite,
+		i: usize,
+		metadata: &'a Metadata<'a>,
+	) -> Result<(), String> {
+		let mut methods = self.0.methods.borrow_mut();
+
+		let def = &metadata.tables().type_def[i.into()];
+		let method_count = if i == metadata.tables().type_def.rows().len() - 1 {
+			metadata.tables().method_def.rows().len() - (def.method_list.0 - 1)
+		} else {
+			metadata.tables().type_def[(i + 1).into()].method_list.0 - def.method_list.0
+		};
+
+		methods.reserve(method_count);
+
+		let method_start = def.method_list.0;
+		let method_end = method_start + method_count;
+
+		for i in method_start..method_end {
+			methods.push(Method::load(clr.clone(), self.clone(), i, metadata)?);
+		}
+
+		Ok(())
+	}
+
 	pub(crate) fn type_def_or_ref_name<'a>(
 		clr: ClrLite,
 		metadata: &'a Metadata<'a>,
@@ -172,7 +202,7 @@ impl Type {
 	pub(crate) fn get_type_for_element_type<'a>(
 		clr: ClrLite,
 		metadata: &'a Metadata<'a>,
-		e: ElementType,
+		e: &ElementType,
 	) -> Result<Type, String> {
 		Ok(match e {
 			ElementType::Void => clr.get_type("System.Void").unwrap(),
@@ -192,7 +222,7 @@ impl Type {
 			ElementType::Pointer(t) => unimplemented!("Pointers not yet supported"),
 			ElementType::Reference(t) => unimplemented!("References not yet supported"),
 			ElementType::ValueType(t) | ElementType::Class(t) => {
-				let name = Type::type_def_or_ref_name(clr.clone(), metadata, t)
+				let name = Type::type_def_or_ref_name(clr.clone(), metadata, *t)
 					.ok_or_else(|| "Unable to locate type".to_string())?;
 
 				clr.get_type(&name)
@@ -208,7 +238,7 @@ impl Type {
 			ElementType::Object => clr.get_type("System.Object").unwrap(),
 			ElementType::SzArray(et) => Type::get_or_create_array_type(
 				clr.clone(),
-				Type::get_type_for_element_type(clr, metadata, *et)?,
+				Type::get_type_for_element_type(clr, metadata, et)?,
 			),
 			ElementType::MethodGenericParam(i) => unimplemented!("Generics not yet supported"),
 			_ => return Err(format!("Invalid element type {:?}", e)),
@@ -230,6 +260,7 @@ impl Type {
 			is_abstract: false,
 			base: RefCell::new(clr.get_type("System.Array")),
 			fields: RefCell::new(vec![]),
+			methods: RefCell::new(vec![]),
 		}));
 
 		clr.0.borrow_mut().add_type(t.clone());
@@ -253,10 +284,15 @@ impl Type {
 		self.0.base.borrow().clone()
 	}
 
-	pub fn fields(&self) -> impl Iterator<Item = Field> {
+	pub fn fields<'a>(&'a self) -> Fields<'a> {
 		Fields {
-			t: self.clone(),
-			current: 0,
+			fields: self.0.fields.borrow(),
+		}
+	}
+
+	pub fn methods<'a>(&'a self) -> Methods<'a> {
+		Methods {
+			methods: self.0.methods.borrow(),
 		}
 	}
 
@@ -269,24 +305,33 @@ impl Type {
 	}
 }
 
-impl fmt::Display for Type {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, "{}", self.full_name())
+pub struct Fields<'a> {
+	fields: Ref<'a, Vec<Field>>,
+}
+
+impl<'a> Deref for Fields<'a> {
+	type Target = [Field];
+
+	fn deref(&self) -> &Self::Target {
+		&self.fields
 	}
 }
 
-struct Fields {
-	t: Type,
-	current: usize,
+pub struct Methods<'a> {
+	methods: Ref<'a, Vec<Method>>,
 }
 
-impl Iterator for Fields {
-	type Item = Field;
+impl<'a> Deref for Methods<'a> {
+	type Target = [Method];
 
-	fn next(&mut self) -> Option<Self::Item> {
-		let next = self.t.0.fields.borrow().get(self.current)?.clone();
-		self.current += 1;
-		Some(next)
+	fn deref(&self) -> &Self::Target {
+		&self.methods
+	}
+}
+
+impl fmt::Display for Type {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "{}", self.full_name())
 	}
 }
 
@@ -319,4 +364,5 @@ pub(crate) struct TypeInternal {
 	is_abstract: bool,
 	base: RefCell<Option<Type>>,
 	fields: RefCell<Vec<Field>>,
+	methods: RefCell<Vec<Method>>,
 }

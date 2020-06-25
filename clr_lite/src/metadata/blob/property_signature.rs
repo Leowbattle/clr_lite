@@ -77,17 +77,23 @@ mod tests {
 			}
 		);
 
-		assert_eq!(properties["Prop2"], PropertySignature {
-			instance: true,
-			return_type: ElementType::String,
-			params: Box::new([])
-		});
+		assert_eq!(
+			properties["Prop2"],
+			PropertySignature {
+				instance: true,
+				return_type: ElementType::String,
+				params: Box::new([])
+			}
+		);
 
 		// Internally, indexers are called "Item".
-		assert_eq!(properties["Item"], PropertySignature {
-			instance: true,
-			return_type: ElementType::Int,
-			params: Box::new([ElementType::Int, ElementType::Int])
-		});
+		assert_eq!(
+			properties["Item"],
+			PropertySignature {
+				instance: true,
+				return_type: ElementType::Int,
+				params: Box::new([ElementType::Int, ElementType::Int])
+			}
+		);
 	}
 }

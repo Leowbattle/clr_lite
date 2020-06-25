@@ -23,7 +23,7 @@ impl Assembly {
 				.ok_or_else(|| format!("{} contains invalid assembly references", name))?;
 
 			// If this reference is not already loaded, load it.
-			if !clr.assemblies().any(|a| a.name() == ref_name) {
+			if !clr.assemblies().iter().any(|a| a.name() == ref_name) {
 				clr.load_assembly(ref_name)?;
 			}
 		}
@@ -55,28 +55,8 @@ impl Assembly {
 		&self.0.name
 	}
 
-	/// Iterate over all types in this assembly
-	pub fn types(&self) -> impl Iterator<Item = Type> {
-		Types {
-			assembly: self.clone(),
-			current: 0,
-		}
-	}
-}
-
-/// Iterator over all types in an assembly
-struct Types {
-	assembly: Assembly,
-	current: usize,
-}
-
-impl Iterator for Types {
-	type Item = Type;
-
-	fn next(&mut self) -> Option<Self::Item> {
-		let next = self.assembly.0.types.get(self.current)?.clone();
-		self.current += 1;
-		Some(next)
+	pub fn types<'a>(&'a self) -> &'a [Type] {
+		&self.0.types
 	}
 }
 

@@ -26,7 +26,7 @@ impl Field {
 			.map_err(|e| e.to_string())?
 			.read_field_signature()
 			.map_err(|e| e.to_string())?;
-		let field_type = Type::get_type_for_element_type(clr.clone(), metadata, signature.r#type)?;
+		let field_type = Type::get_type_for_element_type(clr.clone(), metadata, &signature.r#type)?;
 
 		Ok(Field(Rc::new(FieldInternal {
 			clr: Rc::downgrade(&clr.0),
@@ -60,7 +60,7 @@ impl fmt::Display for Field {
 	}
 }
 
-pub struct FieldInternal {
+pub(crate) struct FieldInternal {
 	clr: Weak<RefCell<ClrInternal>>,
 	name: String,
 	field_type: Weak<TypeInternal>,

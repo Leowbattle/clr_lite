@@ -1,10 +1,11 @@
 pub mod reflection;
 use reflection::*;
 
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
 use std::env;
 use std::fs;
+use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
@@ -16,19 +17,15 @@ impl ClrLite {
 		Ok(ClrLite(Rc::new(RefCell::new(ClrInternal::new_runtime()?))))
 	}
 
-	/// Iterate over all loaded assemblies
-	pub fn assemblies(&self) -> impl Iterator<Item = Assembly> {
+	pub fn assemblies<'a>(&'a self) -> Assemblies<'a> {
 		Assemblies {
-			clr: self.clone(),
-			current: 0,
+			clr: self.0.borrow(),
 		}
 	}
 
-	// Iterate over all loaded types
-	pub fn types(&self) -> impl Iterator<Item = Type> {
+	pub fn types<'a>(&'a self) -> Types<'a> {
 		Types {
-			clr: self.clone(),
-			current: 0,
+			clr: self.0.borrow(),
 		}
 	}
 
@@ -51,34 +48,27 @@ impl ClrLite {
 	}
 }
 
-/// Iterator over all loaded assemblies
-struct Assemblies {
-	clr: ClrLite,
-	current: usize,
+pub struct Assemblies<'a> {
+	clr: Ref<'a, ClrInternal>,
 }
 
-impl Iterator for Assemblies {
-	type Item = Assembly;
+impl<'a> Deref for Assemblies<'a> {
+	type Target = [Assembly];
 
-	fn next(&mut self) -> Option<Self::Item> {
-		let next = self.clr.0.borrow().assemblies.get(self.current)?.clone();
-		self.current += 1;
-		Some(next)
+	fn deref(&self) -> &Self::Target {
+		&self.clr.assemblies
 	}
 }
 
-struct Types {
-	clr: ClrLite,
-	current: usize,
+pub struct Types<'a> {
+	clr: Ref<'a, ClrInternal>,
 }
 
-impl Iterator for Types {
-	type Item = Type;
+impl<'a> Deref for Types<'a> {
+	type Target = [Type];
 
-	fn next(&mut self) -> Option<Self::Item> {
-		let next = self.clr.0.borrow().types.get(self.current)?.clone();
-		self.current += 1;
-		Some(next)
+	fn deref(&self) -> &Self::Target {
+		&self.clr.types
 	}
 }
 
