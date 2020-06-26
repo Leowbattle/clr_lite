@@ -1,3 +1,4 @@
+use crate::metadata::tables::TypeDefOrRefHandle;
 use crate::metadata::*;
 use crate::vm::*;
 
@@ -38,6 +39,54 @@ impl Assembly {
 		// Resolve types
 		for i in 0..type_count {
 			types[i].resolve(clr.clone(), i, &metadata)?;
+		}
+
+		// Resolve type interface implementations
+		for i in metadata.tables().interface_impl.rows() {
+			let td = &metadata.tables().type_def[i.class];
+			let name = metadata.strings().get(td.name).unwrap().to_string();
+			let namespace = metadata.strings().get(td.namespace).unwrap().to_string();
+
+			let full_name = if namespace.is_empty() {
+				name.to_string()
+			} else {
+				format!("{}.{}", namespace, name)
+			};
+			let t = clr.get_type(&full_name).unwrap();
+
+			let interface = {
+				let (n, ns) = match i.interface {
+					TypeDefOrRefHandle::TypeDefHandle(t) => (
+						metadata
+							.strings()
+							.get(metadata.tables().type_def[t].name)
+							.unwrap(),
+						metadata
+							.strings()
+							.get(metadata.tables().type_def[t].namespace)
+							.unwrap(),
+					),
+					TypeDefOrRefHandle::TypeRefHandle(t) => (
+						metadata
+							.strings()
+							.get(metadata.tables().type_ref[t].name)
+							.unwrap(),
+						metadata
+							.strings()
+							.get(metadata.tables().type_ref[t].namespace)
+							.unwrap(),
+					),
+					_ => unimplemented!("Generics not yet supported"),
+				};
+				clr.get_type(&if ns.is_empty() {
+					n.to_string()
+				} else {
+					format!("{}.{}", ns, n)
+				})
+				.unwrap()
+			};
+
+			t.0.interfaces.borrow_mut().push(interface);
 		}
 
 		let a = Assembly(Rc::new(AssemblyInternal {

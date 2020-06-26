@@ -9,10 +9,14 @@ fn main() {
 		println!("{}", a.name());
 		for t in a.types() {
 			if let Some(base) = t.base() {
-				println!("\t{} {} : {}", t.kind(), t, base);
+				print!("\t{} {} : {}", t.kind(), t, base);
 			} else {
-				println!("\t{} {}", t.kind(), t);
+				print!("\t{} {}", t.kind(), t);
 			}
+			for i in t.interfaces().iter() {
+				print!(", {}", i);
+			}
+			println!();
 			for f in t.fields().iter() {
 				println!("\t\t{}", f);
 			}

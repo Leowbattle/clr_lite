@@ -4,19 +4,21 @@ using System.Runtime.InteropServices;
 
 namespace EmptyExe
 {
-	public class Program
+	public class Program : I
 	{
 		static void Main(string[] args)
 		{
 			Console.WriteLine("Hello World!");
 		}
 
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		static extern void H();
+		public void H()
+		{
+
+		}
 	}
 
-	//interface I
-	//{
-	//	void H();
-	//}
+	interface I
+	{
+		void H();
+	}
 }

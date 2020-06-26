@@ -38,6 +38,7 @@ impl Type {
 			base: RefCell::new(None),
 			fields: RefCell::new(vec![]),
 			methods: RefCell::new(vec![]),
+			interfaces: RefCell::new(vec![]),
 		}));
 
 		clr.0.borrow_mut().add_type(t.clone());
@@ -262,6 +263,7 @@ impl Type {
 			base: RefCell::new(clr.get_type("System.Array")),
 			fields: RefCell::new(vec![]),
 			methods: RefCell::new(vec![]),
+			interfaces: RefCell::new(vec![]),
 		}));
 
 		clr.0.borrow_mut().add_type(t.clone());
@@ -297,6 +299,12 @@ impl Type {
 		}
 	}
 
+	pub fn interfaces<'a>(&'a self) -> Interfaces<'a> {
+		Interfaces {
+			interfaces: self.0.interfaces.borrow(),
+		}
+	}
+
 	pub fn is_abstract(&self) -> bool {
 		self.0.is_abstract
 	}
@@ -327,6 +335,18 @@ impl<'a> Deref for Methods<'a> {
 
 	fn deref(&self) -> &Self::Target {
 		&self.methods
+	}
+}
+
+pub struct Interfaces<'a> {
+	interfaces: Ref<'a, Vec<Type>>,
+}
+
+impl<'a> Deref for Interfaces<'a> {
+	type Target = [Type];
+
+	fn deref(&self) -> &Self::Target {
+		&self.interfaces
 	}
 }
 
@@ -372,4 +392,5 @@ pub(crate) struct TypeInternal {
 	base: RefCell<Option<Type>>,
 	fields: RefCell<Vec<Field>>,
 	methods: RefCell<Vec<Method>>,
+	pub(super) interfaces: RefCell<Vec<Type>>,
 }
