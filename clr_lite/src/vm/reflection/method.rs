@@ -26,6 +26,19 @@ impl Method {
 			.read_method_signature()
 			.map_err(|e| e.to_string())?;
 
+		let implementation = if def.impl_attributes.internal_call {
+			MethodImplementation::Internal
+		} else if def.attributes.pinvoke_impl {
+			unimplemented!("PInvoke not yet supported")
+		} else if !def.attributes.is_abstract {
+			MethodImplementation::IL(
+				MethodBody::load(clr.clone(), metadata, def)
+					.map_err(|e| format!("{}.{}: {}", declaring_type, name, e))?,
+			)
+		} else {
+			MethodImplementation::None
+		};
+
 		let method = Method(Rc::new(MethodInternal {
 			clr: Rc::downgrade(&clr.clone().0),
 			name,
@@ -34,6 +47,7 @@ impl Method {
 				&Type::get_type_for_element_type(clr.clone(), metadata, &signature.return_type)?.0,
 			),
 			params: RefCell::new(vec![]),
+			implementation,
 			is_static: def.attributes.is_static,
 			is_virtual: def.attributes.is_virtual,
 			is_abstract: def.attributes.is_abstract,
@@ -100,6 +114,10 @@ impl Method {
 	pub fn is_abstract(&self) -> bool {
 		self.0.is_abstract
 	}
+
+	pub fn implementation<'a>(&'a self) -> &'a MethodImplementation {
+		&self.0.implementation
+	}
 }
 
 pub struct Parameters<'a> {
@@ -128,14 +146,28 @@ impl fmt::Display for Method {
 	}
 }
 
-// TODO MethodBody
 pub(crate) struct MethodInternal {
 	clr: Weak<RefCell<ClrInternal>>,
 	name: String,
 	declaring_type: Weak<TypeInternal>,
 	return_type: Weak<TypeInternal>,
 	params: RefCell<Vec<Parameter>>,
+	implementation: MethodImplementation,
 	is_static: bool,
 	is_virtual: bool,
 	is_abstract: bool,
+}
+
+pub use crate::metadata::tables::{CallingConvention, CharSet};
+
+pub enum MethodImplementation {
+	None,
+	IL(MethodBody),
+	Internal,
+	PInvoke {
+		char_set: CharSet,
+		calling_convention: CallingConvention,
+		name: String,
+		dll: String,
+	},
 }

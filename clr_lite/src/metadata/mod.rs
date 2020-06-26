@@ -209,7 +209,7 @@ impl<'data> Metadata<'data> {
 		.map_err(|e| MetadataError::BadImageFormat(e.to_string()))?;
 
 		Ok(Metadata {
-			pe_info: pe_info,
+			pe_info,
 			pe_data,
 
 			cli_header,
@@ -251,5 +251,13 @@ impl<'data> Metadata<'data> {
 		let data = &self.get_pe_data(self.cli_header.resources)?[offset..];
 		let length = u32::from_le_bytes([data[0], data[1], data[2], data[3]]) as usize;
 		Ok(&data[4..4 + length])
+	}
+
+	pub fn pe_info<'a>(&'a self) -> &'a PeInfo {
+		&self.pe_info
+	}
+
+	pub fn pe_data<'a>(&'a self) -> &'a [u8] {
+		self.pe_data
 	}
 }

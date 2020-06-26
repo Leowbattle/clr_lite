@@ -33,29 +33,33 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClassLayoutTests", "metadat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventTests", "metadata\tables\EventTests\EventTests.csproj", "{26C341F1-6B8C-4E98-9199-46DF56403254}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PropertyTests", "metadata\tables\PropertyTests\PropertyTests.csproj", "{FC84227B-AA48-4E8E-B94C-532F59E3429D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PropertyTests", "metadata\tables\PropertyTests\PropertyTests.csproj", "{FC84227B-AA48-4E8E-B94C-532F59E3429D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MethodSemanticsTests", "metadata\tables\MethodSemanticsTests\MethodSemanticsTests.csproj", "{6C1BE8F8-4E04-4698-B77E-5071EECFABAD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MethodSemanticsTests", "metadata\tables\MethodSemanticsTests\MethodSemanticsTests.csproj", "{6C1BE8F8-4E04-4698-B77E-5071EECFABAD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MethodImplTests", "metadata\tables\MethodImplTests\MethodImplTests.csproj", "{77B648F6-1B0F-47EA-833C-96EEB0E78207}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MethodImplTests", "metadata\tables\MethodImplTests\MethodImplTests.csproj", "{77B648F6-1B0F-47EA-833C-96EEB0E78207}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImplMapTests", "metadata\tables\ImplMapTests\ImplMapTests.csproj", "{5D53F9B1-0293-4D14-B1C7-FA605C8D438A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImplMapTests", "metadata\tables\ImplMapTests\ImplMapTests.csproj", "{5D53F9B1-0293-4D14-B1C7-FA605C8D438A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblyRefTests", "metadata\tables\AssemblyRefTests\AssemblyRefTests.csproj", "{2482F769-391D-4FF7-A941-24457303706D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyRefTests", "metadata\tables\AssemblyRefTests\AssemblyRefTests.csproj", "{2482F769-391D-4FF7-A941-24457303706D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManifestResourceTests", "metadata\tables\ManifestResourceTests\ManifestResourceTests.csproj", "{DB7F0411-9C0C-4F8A-A817-554D74AFBD3F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ManifestResourceTests", "metadata\tables\ManifestResourceTests\ManifestResourceTests.csproj", "{DB7F0411-9C0C-4F8A-A817-554D74AFBD3F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenericTests", "metadata\tables\GenericTests\GenericTests.csproj", "{06C7113D-018F-4DB7-8BAF-CCCCF19CB23B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenericTests", "metadata\tables\GenericTests\GenericTests.csproj", "{06C7113D-018F-4DB7-8BAF-CCCCF19CB23B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "blob", "blob", "{CB7BD751-E0FF-4E68-B66D-1F22CDF93638}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FieldSignatureTests", "metadata\blob\FieldSignatureTests\FieldSignatureTests.csproj", "{D672BDDB-D351-4096-AA26-905598C7BC4C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FieldSignatureTests", "metadata\blob\FieldSignatureTests\FieldSignatureTests.csproj", "{D672BDDB-D351-4096-AA26-905598C7BC4C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MethodSignatureTests", "metadata\blob\MethodSignatureTests\MethodSignatureTests.csproj", "{7C1792BC-1F5E-41CD-A6AD-DF6177EE11CA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PropertySignatureTests", "metadata\blob\PropertySignatureTests\PropertySignatureTests.csproj", "{F77FE23F-6EDA-4639-927B-E7EFA4A03B7B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PropertySignatureTests", "metadata\blob\PropertySignatureTests\PropertySignatureTests.csproj", "{F77FE23F-6EDA-4639-927B-E7EFA4A03B7B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenericInstanceTests", "metadata\blob\GenericInstanceTests\GenericInstanceTests.csproj", "{F58F804A-38EA-42B8-9FBE-1562B23CF79B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenericInstanceTests", "metadata\blob\GenericInstanceTests\GenericInstanceTests.csproj", "{F58F804A-38EA-42B8-9FBE-1562B23CF79B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vm", "vm", "{B60641D1-547D-438E-B66A-8B1BC7275CDE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reflection", "reflection", "{CB4877A0-B5D9-4885-8166-968A45D92082}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -385,6 +389,7 @@ Global
 		{7C1792BC-1F5E-41CD-A6AD-DF6177EE11CA} = {CB7BD751-E0FF-4E68-B66D-1F22CDF93638}
 		{F77FE23F-6EDA-4639-927B-E7EFA4A03B7B} = {CB7BD751-E0FF-4E68-B66D-1F22CDF93638}
 		{F58F804A-38EA-42B8-9FBE-1562B23CF79B} = {CB7BD751-E0FF-4E68-B66D-1F22CDF93638}
+		{CB4877A0-B5D9-4885-8166-968A45D92082} = {B60641D1-547D-438E-B66A-8B1BC7275CDE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D9A2A218-62E6-4E6E-BAEE-6CEBD7780EBA}

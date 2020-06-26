@@ -246,6 +246,7 @@ impl Type {
 	}
 
 	fn get_or_create_array_type(clr: ClrLite, element: Type) -> Type {
+		// TODO Make all reference types use the same array type
 		let full_name = format!("{}[]", element.full_name());
 		if let Some(t) = clr.get_type(&full_name) {
 			return t;
@@ -332,6 +333,12 @@ impl<'a> Deref for Methods<'a> {
 impl fmt::Display for Type {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(f, "{}", self.full_name())
+	}
+}
+
+impl fmt::Debug for Type {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "{}", self)
 	}
 }
 

@@ -12,3 +12,6 @@ pub use method::*;
 
 pub mod parameter;
 pub use parameter::*;
+
+pub mod method_body;
+pub use method_body::*;
