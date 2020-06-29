@@ -3,15 +3,18 @@ use crate::vm::*;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 
-mod stack;
-use stack::*;
+mod stack_frame;
+use stack_frame::*;
 
 pub mod value;
 pub use value::*;
 
+pub mod opcodes;
+pub use opcodes::*;
+
 pub(crate) struct Interpreter {
-	pub(crate) clr: Option<Weak<RefCell<ClrInternal>>>,
-	stack: Vec<u8>,
+	pub clr: Option<Weak<RefCell<ClrInternal>>>,
+	pub stack: Vec<u8>,
 }
 
 impl Interpreter {
@@ -23,7 +26,7 @@ impl Interpreter {
 	}
 
 	pub fn execute(&mut self, m: Method) -> Result<(), String> {
-		StackFrame::new(self.clr(), m, &mut self.stack).execute()
+		StackFrame::new(self.clr(), self, m).execute()
 	}
 
 	fn clr(&self) -> ClrLite {

@@ -6,7 +6,7 @@ namespace EmptyExe
 	{
 		static void Main(string[] args)
 		{
-			Console.WriteLine("Hello World!");
+			
 		}
 	}
 

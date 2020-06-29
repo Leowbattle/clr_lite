@@ -8,10 +8,10 @@ use crate::vm::*;
 
 use binary_reader::*;
 
-use std::rc::Weak;
+use std::rc::{Rc, Weak};
 
 pub struct MethodBody {
-	code: Box<[u8]>,
+	code: Rc<[u8]>,
 	max_stack: usize,
 	local_variables: Box<[Type]>,
 	init_locals: bool,
@@ -37,11 +37,12 @@ impl MethodBody {
 		match b & 0x3 {
 			// Small format
 			0x2 => Ok(MethodBody {
-				code: br
-					.read_array::<u8>(((b & 0xfc) >> 2) as usize)
-					.ok_or_else(|| "Invalid method body".to_string())?
-					.to_vec()
-					.into_boxed_slice(),
+				code: Rc::from(
+					br.read_array::<u8>(((b & 0xfc) >> 2) as usize)
+						.ok_or_else(|| "Invalid method body".to_string())?
+						.to_vec()
+						.into_boxed_slice(),
+				),
 				max_stack: 8,
 				local_variables: vec![].into_boxed_slice(),
 				init_locals: b & 0x10 == 0x10,
@@ -99,11 +100,12 @@ impl MethodBody {
 					}
 				};
 
-				let code = br
-					.read_array::<u8>(code_size)
-					.ok_or_else(|| "Invalid method body".to_string())?
-					.to_vec()
-					.into_boxed_slice();
+				let code = Rc::from(
+					br.read_array::<u8>(code_size)
+						.ok_or_else(|| "Invalid method body".to_string())?
+						.to_vec()
+						.into_boxed_slice(),
+				);
 
 				let mut clauses = vec![];
 				// There are exception handlers
@@ -242,21 +244,21 @@ impl MethodBody {
 		}
 	}
 
-	pub fn code<'a>(&'a self) -> &'a [u8] {
-		&self.code
+	pub fn code<'a>(&'a self) -> Rc<[u8]> {
+		self.code.clone()
 	}
 
 	pub fn max_stack(&self) -> usize {
-		self.max_stack()
+		self.max_stack
 	}
 
 	pub fn local_variables<'a>(&'a self) -> &'a [Type] {
-		&self.local_variables()
+		&self.local_variables
 	}
 
 	/// Should local variables be initialised to 0?
 	pub fn init_locals(&self) -> bool {
-		self.init_locals()
+		self.init_locals
 	}
 
 	pub fn exception_handling_clauses<'a>(&'a self) -> &'a [ExceptionClause] {
