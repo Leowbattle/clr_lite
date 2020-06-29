@@ -14,6 +14,7 @@ impl Field {
 		clr: ClrLite,
 		declaring_type: Type,
 		i: usize,
+		offset: usize,
 		metadata: &'a Metadata<'a>,
 	) -> Result<Field, String> {
 		let def = &metadata.tables().field[FieldHandle(i)];
@@ -34,6 +35,7 @@ impl Field {
 			field_type: Rc::downgrade(&field_type.0),
 			declaring_type: Rc::downgrade(&declaring_type.0),
 			is_static: def.attributes.is_static,
+			offset,
 		})))
 	}
 
@@ -52,6 +54,11 @@ impl Field {
 	pub fn is_static(&self) -> bool {
 		self.0.is_static
 	}
+
+	// Byte offset of field in struct
+	pub fn offset(&self) -> usize {
+		self.0.offset
+	}
 }
 
 impl fmt::Display for Field {
@@ -66,4 +73,5 @@ pub(crate) struct FieldInternal {
 	field_type: Weak<TypeInternal>,
 	declaring_type: Weak<TypeInternal>,
 	is_static: bool,
+	offset: usize,
 }

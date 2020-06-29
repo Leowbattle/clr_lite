@@ -9,4 +9,10 @@ namespace EmptyExe
 			Console.WriteLine("Hello World!");
 		}
 	}
+
+	struct Position
+	{
+		int x;
+		int y;
+	}
 }

@@ -45,6 +45,8 @@ pub struct Metadata<'data> {
 	blob_heap: BlobHeap<'data>,
 	guid_heap: GuidHeap<'data>,
 	tables: Tables,
+
+	entry_point: Option<MethodDefHandle>,
 }
 
 use binary_reader::*;
@@ -220,6 +222,14 @@ impl<'data> Metadata<'data> {
 			blob_heap,
 			guid_heap,
 			tables,
+
+			entry_point: {
+				if cli_header.entry_point.index() == 0 {
+					None
+				} else {
+					Some(MethodDefHandle(cli_header.entry_point.index() - 1))
+				}
+			},
 		})
 	}
 
@@ -259,5 +269,9 @@ impl<'data> Metadata<'data> {
 
 	pub fn pe_data<'a>(&'a self) -> &'a [u8] {
 		self.pe_data
+	}
+
+	pub fn entry_point(&self) -> Option<MethodDefHandle> {
+		self.entry_point
 	}
 }

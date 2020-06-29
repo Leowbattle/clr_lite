@@ -1,4 +1,4 @@
-use crate::metadata::tables::TypeDefOrRefHandle;
+use crate::metadata::tables::{MethodDefHandle, TableType, TypeDefOrRefHandle};
 use crate::metadata::*;
 use crate::vm::*;
 
@@ -34,6 +34,9 @@ impl Assembly {
 			clr: Rc::downgrade(&clr.0),
 			name,
 			types: RefCell::new(vec![]),
+			entry_point: RefCell::new(None),
+
+			method_defs: RefCell::new(vec![]),
 		}));
 
 		// Load type names
@@ -98,6 +101,23 @@ impl Assembly {
 
 		*a.0.types.borrow_mut() = types;
 
+		// Get method defs
+		let mut method_defs = Vec::with_capacity(metadata.tables().method_def.rows().len());
+		for t in a.types().iter() {
+			for m in t.methods().iter() {
+				method_defs.push(m.clone());
+			}
+		}
+		*a.0.method_defs.borrow_mut() = method_defs;
+
+		// Get entry point if one exists
+		if let Some(ep) = metadata.entry_point() {
+			*a.0.entry_point.borrow_mut() = Some(
+				a.resolve_method_def(ep.0)
+					.ok_or_else(|| format!("Missing entry point for {}", a.name()))?,
+			);
+		}
+
 		clr.0.borrow_mut().assemblies.push(a.clone());
 
 		Ok(a)
@@ -111,6 +131,14 @@ impl Assembly {
 		Types {
 			types: self.0.types.borrow(),
 		}
+	}
+
+	pub fn entry_point(&self) -> Option<Method> {
+		self.0.entry_point.borrow().clone()
+	}
+
+	pub fn resolve_method_def(&self, i: usize) -> Option<Method> {
+		Some(self.0.method_defs.borrow().get(i)?.clone())
 	}
 }
 
@@ -130,4 +158,7 @@ pub(crate) struct AssemblyInternal {
 	clr: Weak<RefCell<ClrInternal>>,
 	name: String,
 	types: RefCell<Vec<Type>>,
+	entry_point: RefCell<Option<Method>>,
+
+	method_defs: RefCell<Vec<Method>>,
 }

@@ -1,6 +1,12 @@
 pub mod reflection;
 use reflection::*;
 
+pub mod gc;
+use gc::*;
+
+pub mod interpreter;
+use interpreter::*;
+
 use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
 use std::env;
@@ -14,7 +20,10 @@ pub struct ClrLite(pub(crate) Rc<RefCell<ClrInternal>>);
 
 impl ClrLite {
 	pub fn new_runtime() -> Result<ClrLite, String> {
-		Ok(ClrLite(Rc::new(RefCell::new(ClrInternal::new_runtime()?))))
+		let mut clr = ClrLite(Rc::new(RefCell::new(ClrInternal::new_runtime()?)));
+		clr.0.borrow().heap.borrow_mut().clr = Some(Rc::downgrade(&clr.0));
+		clr.0.borrow().interpreter.borrow_mut().clr = Some(Rc::downgrade(&clr.0));
+		Ok(clr)
 	}
 
 	pub fn assemblies<'a>(&'a self) -> Assemblies<'a> {
@@ -45,6 +54,10 @@ impl ClrLite {
 
 	pub fn get_type(&self, name: &str) -> Option<Type> {
 		Some(self.0.borrow().type_map.get(name)?.clone())
+	}
+
+	pub fn execute(&mut self, m: Method) -> Result<(), String> {
+		self.0.borrow().interpreter.borrow_mut().execute(m)
 	}
 }
 
@@ -77,6 +90,8 @@ pub(crate) struct ClrInternal {
 	assemblies: Vec<Assembly>,
 	types: Vec<Type>,
 	type_map: HashMap<String, Type>,
+	heap: RefCell<GcHeap>,
+	interpreter: RefCell<Interpreter>,
 }
 
 impl ClrInternal {
@@ -92,6 +107,8 @@ impl ClrInternal {
 			assemblies: vec![],
 			types: vec![],
 			type_map: HashMap::new(),
+			heap: RefCell::new(GcHeap::new()),
+			interpreter: RefCell::new(Interpreter::new()),
 		})
 	}
 

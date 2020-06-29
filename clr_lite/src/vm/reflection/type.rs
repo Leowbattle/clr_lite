@@ -41,6 +41,9 @@ impl Type {
 			fields: RefCell::new(vec![]),
 			methods: RefCell::new(vec![]),
 			interfaces: RefCell::new(vec![]),
+
+			field_map: Default::default(),
+			method_map: Default::default(),
 		}));
 
 		clr.0.borrow_mut().add_type(t.clone());
@@ -119,8 +122,6 @@ impl Type {
 		i: usize,
 		metadata: &'a Metadata<'a>,
 	) -> Result<(), String> {
-		let mut fields = self.0.fields.borrow_mut();
-
 		// ECMA-335 II.22.37:
 		// The field list is the start of a contiguous run of fields owned by this type.
 		// The run continues until the smaller of:
@@ -134,13 +135,27 @@ impl Type {
 			metadata.tables().type_def[(i + 1).into()].field_list.0 - def.field_list.0
 		};
 
-		fields.reserve(field_count);
+		self.0.fields.borrow_mut().reserve(field_count);
 
 		let field_start = def.field_list.0;
 		let field_end = field_start + field_count;
 
+		// The fields of this type come after the fields of the base type.
+		let mut offset = if let Some(base) = self.base() {
+			base.size()
+		} else {
+			0
+		};
 		for i in field_start..field_end {
-			fields.push(Field::load(clr.clone(), self.clone(), i, metadata)?);
+			let f = {
+				let mut fields = self.0.fields.borrow_mut();
+				let mut field_map = self.0.field_map.borrow_mut();
+				let f = Field::load(clr.clone(), self.clone(), i, offset, metadata)?;
+				fields.push(f.clone());
+				field_map.insert(f.name().to_string(), f.clone());
+				f
+			};
+			offset += f.field_type().unwrap().size();
 		}
 
 		Ok(())
@@ -153,6 +168,7 @@ impl Type {
 		metadata: &'a Metadata<'a>,
 	) -> Result<(), String> {
 		let mut methods = self.0.methods.borrow_mut();
+		let mut method_map = self.0.method_map.borrow_mut();
 
 		let def = &metadata.tables().type_def[i.into()];
 		let method_count = if i == metadata.tables().type_def.rows().len() - 1 {
@@ -167,7 +183,9 @@ impl Type {
 		let method_end = method_start + method_count;
 
 		for i in method_start..method_end {
-			methods.push(Method::load(clr.clone(), self.clone(), i, metadata)?);
+			let m = Method::load(clr.clone(), self.clone(), i, metadata)?;
+			methods.push(m.clone());
+			method_map.insert(m.name().to_string(), m);
 		}
 
 		Ok(())
@@ -267,6 +285,9 @@ impl Type {
 			fields: RefCell::new(vec![]),
 			methods: RefCell::new(vec![]),
 			interfaces: RefCell::new(vec![]),
+
+			field_map: Default::default(),
+			method_map: Default::default(),
 		}));
 
 		clr.0.borrow_mut().add_type(t.clone());
@@ -309,6 +330,10 @@ impl Type {
 		fields.into_boxed_slice()
 	}
 
+	pub fn get_field(&self, name: &str) -> Option<Field> {
+		Some(self.0.field_map.borrow().get(name)?.clone())
+	}
+
 	pub fn methods<'a>(&'a self) -> Methods<'a> {
 		Methods {
 			methods: self.0.methods.borrow(),
@@ -324,6 +349,10 @@ impl Type {
 			methods.extend_from_slice(&i.all_methods());
 		}
 		methods.into_boxed_slice()
+	}
+
+	pub fn get_method(&self, name: &str) -> Option<Method> {
+		Some(self.0.method_map.borrow().get(name)?.clone())
 	}
 
 	pub fn interfaces<'a>(&'a self) -> Interfaces<'a> {
@@ -494,4 +523,7 @@ pub(crate) struct TypeInternal {
 	fields: RefCell<Vec<Field>>,
 	methods: RefCell<Vec<Method>>,
 	pub(super) interfaces: RefCell<Vec<Type>>,
+
+	field_map: RefCell<HashMap<String, Field>>,
+	method_map: RefCell<HashMap<String, Method>>,
 }
