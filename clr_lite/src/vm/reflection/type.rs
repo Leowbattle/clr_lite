@@ -14,6 +14,7 @@ pub struct Type(pub(crate) Rc<TypeInternal>);
 impl Type {
 	pub(crate) fn load<'a>(
 		clr: ClrLite,
+		assembly: Assembly,
 		i: usize,
 		metadata: &'a Metadata<'a>,
 	) -> Result<Type, String> {
@@ -30,6 +31,7 @@ impl Type {
 
 		let t = Type(Rc::new(TypeInternal {
 			clr: Rc::downgrade(&clr.0),
+			assembly: Rc::downgrade(&assembly.0),
 			name,
 			namespace,
 			full_name,
@@ -255,6 +257,7 @@ impl Type {
 
 		let t = Type(Rc::new(TypeInternal {
 			clr: Rc::downgrade(&clr.0),
+			assembly: element.0.assembly.clone(),
 			name: format!("{}[]", element.name()),
 			namespace: element.namespace().to_string(),
 			full_name,
@@ -287,16 +290,40 @@ impl Type {
 		self.0.base.borrow().clone()
 	}
 
+	pub fn assembly(&self) -> Option<Assembly> {
+		Some(Assembly(self.0.assembly.upgrade().unwrap()))
+	}
+
 	pub fn fields<'a>(&'a self) -> Fields<'a> {
 		Fields {
 			fields: self.0.fields.borrow(),
 		}
 	}
 
+	/// Fields from this class and its base classes.
+	pub fn all_fields<'a>(&'a self) -> Box<[Field]> {
+		let mut fields = self.fields().to_vec();
+		if let Some(base) = self.base() {
+			fields.extend_from_slice(&base.all_fields());
+		}
+		fields.into_boxed_slice()
+	}
+
 	pub fn methods<'a>(&'a self) -> Methods<'a> {
 		Methods {
 			methods: self.0.methods.borrow(),
 		}
+	}
+
+	pub fn all_methods<'a>(&'a self) -> Box<[Method]> {
+		let mut methods = self.methods().to_vec();
+		if let Some(base) = self.base() {
+			methods.extend_from_slice(&base.all_methods());
+		}
+		for i in self.interfaces().iter() {
+			methods.extend_from_slice(&i.all_methods());
+		}
+		methods.into_boxed_slice()
 	}
 
 	pub fn interfaces<'a>(&'a self) -> Interfaces<'a> {
@@ -312,7 +339,80 @@ impl Type {
 	pub fn kind(&self) -> TypeKind {
 		self.0.kind.borrow().unwrap()
 	}
+
+	pub fn instance_of(&self, other: Type) -> bool {
+		if *self == other {
+			true
+		} else if let Some(base) = self.base() {
+			base.instance_of(other)
+		} else if self.interfaces().contains(&other) {
+			true
+		} else {
+			false
+		}
+	}
+
+	pub fn is_reference_type(&self) -> bool {
+		let clr = ClrLite(self.0.clr.upgrade().unwrap());
+		!self.instance_of(clr.get_type("System.ValueType").unwrap())
+	}
+
+	/// Returns the size in bytes occupied by fields
+	pub fn size(&self) -> usize {
+		let clr = ClrLite(self.0.clr.upgrade().unwrap());
+		if *self == clr.get_type("System.Boolean").unwrap() {
+			1
+		} else if *self == clr.get_type("System.Char").unwrap() {
+			2
+		} else if *self == clr.get_type("System.SByte").unwrap() {
+			1
+		} else if *self == clr.get_type("System.Byte").unwrap() {
+			1
+		} else if *self == clr.get_type("System.Int16").unwrap() {
+			2
+		} else if *self == clr.get_type("System.UInt16").unwrap() {
+			2
+		} else if *self == clr.get_type("System.Int32").unwrap() {
+			4
+		} else if *self == clr.get_type("System.UInt32").unwrap() {
+			4
+		} else if *self == clr.get_type("System.Int64").unwrap() {
+			8
+		} else if *self == clr.get_type("System.UInt64").unwrap() {
+			8
+		} else if *self == clr.get_type("System.Single").unwrap() {
+			4
+		} else if *self == clr.get_type("System.Double").unwrap() {
+			8
+		} else {
+			let size = self
+				.fields()
+				.iter()
+				.filter(|f| !f.is_static())
+				.fold(0, |a, f| {
+					let field_type = f.field_type().unwrap();
+					if field_type.is_reference_type() {
+						a + 8
+					} else {
+						a + f.field_type().unwrap().size()
+					}
+				});
+			if let Some(base) = self.base() {
+				size + base.size()
+			} else {
+				size
+			}
+		}
+	}
 }
+
+impl PartialEq for Type {
+	fn eq(&self, other: &Type) -> bool {
+		self.full_name() == other.full_name()
+	}
+}
+
+impl Eq for Type {}
 
 pub struct Fields<'a> {
 	fields: Ref<'a, Vec<Field>>,
@@ -384,6 +484,7 @@ impl fmt::Display for TypeKind {
 // borrowed from.
 pub(crate) struct TypeInternal {
 	clr: Weak<RefCell<ClrInternal>>,
+	assembly: Weak<AssemblyInternal>,
 	name: String,
 	namespace: String,
 	full_name: String,

@@ -1,17 +1,17 @@
 ﻿namespace System
 {
-    public class Exception
-    {
-        public virtual string Message { get; }
+	public class Exception
+	{
+		public virtual string Message { get; }
 
-        public Exception()
-        {
+		public Exception()
+		{
 
-        }
+		}
 
-        public Exception(string message)
-        {
-            Message = message;
-        }
-    }
+		public Exception(string message)
+		{
+			Message = message;
+		}
+	}
 }

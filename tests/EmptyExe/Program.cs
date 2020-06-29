@@ -1,24 +1,12 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace EmptyExe
 {
-	public class Program : I
+	public class Program
 	{
 		static void Main(string[] args)
 		{
 			Console.WriteLine("Hello World!");
 		}
-
-		public void H()
-		{
-
-		}
-	}
-
-	interface I
-	{
-		void H();
 	}
 }

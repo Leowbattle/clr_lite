@@ -2,6 +2,7 @@ use crate::metadata::tables::TypeDefOrRefHandle;
 use crate::metadata::*;
 use crate::vm::*;
 
+use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 
 #[derive(Clone)]
@@ -29,11 +30,17 @@ impl Assembly {
 			}
 		}
 
+		let a = Assembly(Rc::new(AssemblyInternal {
+			clr: Rc::downgrade(&clr.0),
+			name,
+			types: RefCell::new(vec![]),
+		}));
+
 		// Load type names
 		let type_count = metadata.tables().type_def.rows().len();
 		let mut types = Vec::with_capacity(type_count);
 		for i in 0..type_count {
-			types.push(Type::load(clr.clone(), i, &metadata)?);
+			types.push(Type::load(clr.clone(), a.clone(), i, &metadata)?);
 		}
 
 		// Resolve types
@@ -89,11 +96,7 @@ impl Assembly {
 			t.0.interfaces.borrow_mut().push(interface);
 		}
 
-		let a = Assembly(Rc::new(AssemblyInternal {
-			clr: Rc::downgrade(&clr.0),
-			name,
-			types,
-		}));
+		*a.0.types.borrow_mut() = types;
 
 		clr.0.borrow_mut().assemblies.push(a.clone());
 
@@ -104,13 +107,27 @@ impl Assembly {
 		&self.0.name
 	}
 
-	pub fn types<'a>(&'a self) -> &'a [Type] {
-		&self.0.types
+	pub fn types<'a>(&'a self) -> Types<'a> {
+		Types {
+			types: self.0.types.borrow(),
+		}
+	}
+}
+
+pub struct Types<'a> {
+	types: Ref<'a, Vec<Type>>,
+}
+
+impl<'a> Deref for Types<'a> {
+	type Target = [Type];
+
+	fn deref(&self) -> &Self::Target {
+		&self.types
 	}
 }
 
 pub(crate) struct AssemblyInternal {
 	clr: Weak<RefCell<ClrInternal>>,
 	name: String,
-	types: Vec<Type>,
+	types: RefCell<Vec<Type>>,
 }

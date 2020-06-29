@@ -7,7 +7,7 @@ fn main() {
 
 	for a in rt.assemblies().iter() {
 		println!("{}", a.name());
-		for t in a.types() {
+		for t in a.types().iter() {
 			if let Some(base) = t.base() {
 				print!("\t{} {} : {}", t.kind(), t, base);
 			} else {
@@ -17,6 +17,7 @@ fn main() {
 				print!(", {}", i);
 			}
 			println!();
+			println!("\t\tsize = {}", t.size());
 			for f in t.fields().iter() {
 				println!("\t\t{}", f);
 			}
