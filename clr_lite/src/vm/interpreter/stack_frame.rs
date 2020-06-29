@@ -16,7 +16,6 @@ pub(super) struct StackFrame<'a> {
 
 	code: Rc<[u8]>,
 	ip: usize,
-	// params: &'a [Value<'a>],
 }
 
 impl<'a> StackFrame<'a> {
@@ -43,13 +42,25 @@ impl<'a> StackFrame<'a> {
 		};
 
 		// Allocate storage for local variables on the managed stack.
-		let locals = unsafe {
+		let mut locals = unsafe {
 			let count = body.local_variables().len();
 			slice::from_raw_parts_mut(
 				self.stackalloc(count * size_of::<Value>()).as_mut_ptr() as *mut Value,
 				count,
 			)
 		};
+
+		// let mut params = unsafe {
+		// 	let count = self.method.parameters().len();
+		// 	let start = self.interpreter.operand_stack.len() - count;
+		// 	slice::from_raw_parts_mut(
+		// 		self.interpreter
+		// 			.operand_stack
+		// 			.as_mut_ptr()
+		// 			.offset(start as isize) as *mut Value,
+		// 		count,
+		// 	)
+		// };
 
 		loop {
 			let op = self.get_opcode();
@@ -87,6 +98,31 @@ impl<'a> StackFrame<'a> {
 					let val = self.il_get::<f64>();
 					self.push(Value::F64(val));
 				}
+
+				Opcodes::Ldloc => {
+					let i = self.il_get::<u16>() as usize;
+					self.push(locals[i]);
+				}
+				Opcodes::Ldloc_S => {
+					let i = self.il_get::<u8>() as usize;
+					self.push(locals[i]);
+				}
+				Opcodes::Ldloc_0 => self.push(locals[0]),
+				Opcodes::Ldloc_1 => self.push(locals[1]),
+				Opcodes::Ldloc_2 => self.push(locals[2]),
+				Opcodes::Ldloc_3 => self.push(locals[3]),
+				Opcodes::Stloc => {
+					let i = self.il_get::<u16>() as usize;
+					locals[i] = self.pop();
+				}
+				Opcodes::Stloc_S => {
+					let i = self.il_get::<u8>() as usize;
+					locals[i] = self.pop();
+				}
+				Opcodes::Stloc_0 => locals[0] = self.pop(),
+				Opcodes::Stloc_1 => locals[1] = self.pop(),
+				Opcodes::Stloc_2 => locals[2] = self.pop(),
+				Opcodes::Stloc_3 => locals[3] = self.pop(),
 
 				_ => return Err(format!("Use of unimplemented instruction {:?}", op)),
 			}

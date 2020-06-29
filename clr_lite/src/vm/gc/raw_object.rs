@@ -2,7 +2,7 @@ use crate::vm::interpreter::*;
 use crate::vm::reflection::*;
 
 ///! The data for fields of an object or value type
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct RawObject(*mut u8);
 
 impl RawObject {
