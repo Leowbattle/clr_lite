@@ -14,14 +14,16 @@ pub use opcodes::*;
 
 pub(crate) struct Interpreter {
 	pub clr: Option<Weak<RefCell<ClrInternal>>>,
-	pub stack: Vec<u8>,
+	pub stackalloc: Vec<u8>,
+	pub operand_stack: Vec<Value>,
 }
 
 impl Interpreter {
 	pub(crate) fn new() -> Interpreter {
 		Interpreter {
 			clr: None,
-			stack: Vec::with_capacity(1024 * 1024),
+			stackalloc: Vec::with_capacity(1024 * 1024),
+			operand_stack: Vec::with_capacity(128 * 1024),
 		}
 	}
 
