@@ -1,6 +1,5 @@
 use crate::vm::interpreter::*;
 
-
 fn run(func_name: &str) -> Result<Option<Value>, String> {
 	let mut clr = ClrLite::new_runtime().unwrap();
 	let _a = clr
@@ -45,4 +44,9 @@ fn test_ldc_r4() {
 #[test]
 fn test_ldc_r8() {
 	assert_eq!(run("Ldc_R8"), Ok(Some(Value::F64(1.2345678))));
+}
+
+#[test]
+fn test_locals() {
+	assert_eq!(run("Locals"), Ok(Some(Value::I32(42))));
 }
