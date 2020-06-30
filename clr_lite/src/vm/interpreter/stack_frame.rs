@@ -1,7 +1,4 @@
-
 use crate::vm::interpreter::*;
-
-
 
 use std::mem::size_of;
 use std::slice;
@@ -35,7 +32,7 @@ impl<'a> StackFrame<'a> {
 		}
 	}
 
-	pub fn execute(&mut self) -> RunResult {
+	pub fn execute(&mut self, params: &mut [Value]) -> RunResult {
 		let body = match self.method.implementation() {
 			MethodImplementation::IL(b) => b,
 			_ => unreachable!(),
@@ -49,18 +46,6 @@ impl<'a> StackFrame<'a> {
 				count,
 			)
 		};
-
-		// let mut params = unsafe {
-		// 	let count = self.method.parameters().len();
-		// 	let start = self.interpreter.operand_stack.len() - count;
-		// 	slice::from_raw_parts_mut(
-		// 		self.interpreter
-		// 			.operand_stack
-		// 			.as_mut_ptr()
-		// 			.offset(start as isize) as *mut Value,
-		// 		count,
-		// 	)
-		// };
 
 		loop {
 			let op = self.get_opcode();
@@ -131,6 +116,27 @@ impl<'a> StackFrame<'a> {
 				Opcodes::Stloc_1 => locals[1] = self.pop(),
 				Opcodes::Stloc_2 => locals[2] = self.pop(),
 				Opcodes::Stloc_3 => locals[3] = self.pop(),
+
+				Opcodes::Ldarg_S => {
+					let i = self.il_get::<u8>() as usize;
+					self.push(params[i]);
+				}
+				Opcodes::Ldarg => {
+					let i = self.il_get::<u32>() as usize;
+					self.push(params[i]);
+				}
+				Opcodes::Ldarg_0 => self.push(params[0]),
+				Opcodes::Ldarg_1 => self.push(params[1]),
+				Opcodes::Ldarg_2 => self.push(params[2]),
+				Opcodes::Ldarg_3 => self.push(params[3]),
+				Opcodes::Starg_S => {
+					let i = self.il_get::<u8>() as usize;
+					params[i] = self.pop();
+				}
+				Opcodes::Starg => {
+					let i = self.il_get::<u32>() as usize;
+					params[i] = self.pop();
+				}
 
 				Opcodes::Br_S => {
 					let offset = self.il_get::<i8>();

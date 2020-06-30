@@ -29,8 +29,20 @@ impl Interpreter {
 		}
 	}
 
-	pub fn execute(&mut self, m: Method) -> RunResult {
-		StackFrame::new(self.clr(), self, m).execute()
+	pub fn execute(&mut self, m: Method, params: &mut [Value]) -> RunResult {
+		// Validate parameters
+		if m.parameters().len() != params.len() {
+			return Err(format!(
+				"Invalid parameter count {} for {}",
+				params.len(),
+				m,
+			));
+		}
+		for (_p1, _p2) in m.parameters().iter().zip(params.iter()) {
+			// TODO Check
+		}
+
+		StackFrame::new(self.clr(), self, m).execute(params)
 	}
 
 	fn clr(&self) -> ClrLite {

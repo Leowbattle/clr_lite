@@ -92,8 +92,8 @@ impl ClrLite {
 		Some(self.0.borrow().type_map.get(name)?.clone())
 	}
 
-	pub fn execute(&mut self, m: Method) -> RunResult {
-		self.0.borrow().interpreter.borrow_mut().execute(m)
+	pub fn execute(&mut self, m: Method, params: &mut [Value]) -> RunResult {
+		self.0.borrow().interpreter.borrow_mut().execute(m, params)
 	}
 }
 
