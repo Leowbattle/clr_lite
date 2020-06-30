@@ -717,5 +717,37 @@ namespace InterpreterTests
 			}
 		}
 		#endregion
+
+		#region Maths
+		static int Add(int a, int b)
+		{
+			return a + b;
+		}
+
+		static float AddFloat(float a, float b)
+		{
+			return a + b;
+		}
+
+		static int Sub(int a, int b)
+		{
+			return a - b;
+		}
+
+		static int Mul(int a, int b)
+		{
+			return a * b;
+		}
+
+		static int Div(int a, int b)
+		{
+			return a / b;
+		}
+
+		static bool IsEven(int a)
+		{
+			return a % 2 == 0;
+		}
+		#endregion
 	}
 }

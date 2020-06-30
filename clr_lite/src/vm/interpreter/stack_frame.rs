@@ -310,6 +310,32 @@ impl<'a> StackFrame<'a> {
 					self.push(Value::I32((a < b) as i32));
 				}
 
+				Opcodes::Add => {
+					let b = self.pop();
+					let a = self.pop();
+					self.push(a + b);
+				}
+				Opcodes::Sub => {
+					let b = self.pop();
+					let a = self.pop();
+					self.push(a - b);
+				}
+				Opcodes::Mul => {
+					let b = self.pop();
+					let a = self.pop();
+					self.push(a * b);
+				}
+				Opcodes::Div => {
+					let b = self.pop();
+					let a = self.pop();
+					self.push(a / b);
+				}
+				Opcodes::Rem => {
+					let b = self.pop();
+					let a = self.pop();
+					self.push(a % b);
+				}
+
 				_ => {
 					return Err(format!(
 						"Use of unimplemented instruction {:?} at IL_{:04x}",

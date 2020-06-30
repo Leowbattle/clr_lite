@@ -126,3 +126,51 @@ fn test_le() {
 	assert_eq!(run("Le", &mut [Value::I32(4)]), Ok(Some(Value::I32(5))));
 	assert_eq!(run("Le", &mut [Value::I32(100)]), Ok(Some(Value::I32(4))));
 }
+
+#[test]
+fn test_add() {
+	assert_eq!(
+		run("Add", &mut [Value::I32(4), Value::I32(8)]),
+		Ok(Some(Value::I32(12)))
+	);
+	assert_ne!(
+		run("Add", &mut [Value::I32(9), Value::I32(10)]),
+		Ok(Some(Value::I32(21)))
+	);
+
+	// I don't compare directly to 3.3f32 because you shouldn't check floats for equality with some constant using ==.
+	assert_eq!(
+		run("AddFloat", &mut [Value::F32(1.1f32), Value::F32(2.2f32)]),
+		Ok(Some(Value::F32(1.1f32 + 2.2f32)))
+	);
+}
+
+#[test]
+fn test_sub() {
+	assert_eq!(
+		run("Sub", &mut [Value::I32(4), Value::I32(8)]),
+		Ok(Some(Value::I32(-4)))
+	);
+}
+
+#[test]
+fn test_mul() {
+	assert_eq!(
+		run("Mul", &mut [Value::I32(4), Value::I32(8)]),
+		Ok(Some(Value::I32(32)))
+	);
+}
+
+#[test]
+fn test_div() {
+	assert_eq!(
+		run("Div", &mut [Value::I32(100), Value::I32(4)]),
+		Ok(Some(Value::I32(25)))
+	);
+}
+
+#[test]
+fn test_rem() {
+	assert_eq!(run("IsEven", &mut [Value::I32(4)]), Ok(Some(Value::I32(1))));
+	assert_eq!(run("IsEven", &mut [Value::I32(5)]), Ok(Some(Value::I32(0))));
+}
