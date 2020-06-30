@@ -1,9 +1,9 @@
 use crate::vm::interpreter::*;
-use crate::vm::*;
+
 
 fn run(func_name: &str) -> Result<Option<Value>, String> {
 	let mut clr = ClrLite::new_runtime().unwrap();
-	let a = clr
+	let _a = clr
 		.load_assembly_from_path(
 			"../tests/vm/InterpreterTests/bin/Debug/netcoreapp3.1/InterpreterTests.dll",
 		)

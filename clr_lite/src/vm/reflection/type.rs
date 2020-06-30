@@ -92,7 +92,7 @@ impl Type {
 
 	fn resolve_kind<'a>(
 		&mut self,
-		clr: ClrLite,
+		_clr: ClrLite,
 		i: usize,
 		metadata: &'a Metadata<'a>,
 	) -> Result<(), String> {
@@ -192,7 +192,7 @@ impl Type {
 	}
 
 	pub(crate) fn type_def_or_ref_name<'a>(
-		clr: ClrLite,
+		_clr: ClrLite,
 		metadata: &'a Metadata<'a>,
 		def: TypeDefOrRefHandle,
 	) -> Option<String> {
@@ -205,7 +205,7 @@ impl Type {
 				metadata.tables().type_ref[t].name,
 				metadata.tables().type_ref[t].namespace,
 			),
-			TypeDefOrRefHandle::TypeSpecHandle(t) => {
+			TypeDefOrRefHandle::TypeSpecHandle(_t) => {
 				unimplemented!("Inheriting from generic types not yet supported")
 			}
 		};
@@ -240,8 +240,8 @@ impl Type {
 			ElementType::Float => clr.get_type("System.Single").unwrap(),
 			ElementType::Double => clr.get_type("System.Double").unwrap(),
 			ElementType::String => clr.get_type("System.String").unwrap(),
-			ElementType::Pointer(t) => unimplemented!("Pointers not yet supported"),
-			ElementType::Reference(t) => unimplemented!("References not yet supported"),
+			ElementType::Pointer(_t) => unimplemented!("Pointers not yet supported"),
+			ElementType::Reference(_t) => unimplemented!("References not yet supported"),
 			ElementType::ValueType(t) | ElementType::Class(t) => {
 				let name = Type::type_def_or_ref_name(clr.clone(), metadata, *t)
 					.ok_or_else(|| "Unable to locate type".to_string())?;
@@ -249,7 +249,7 @@ impl Type {
 				clr.get_type(&name)
 					.ok_or_else(|| format!("Unable to locate type {:?}", name))?
 			}
-			ElementType::TypeGenericParam(i) => unimplemented!("Generics not yet supported"),
+			ElementType::TypeGenericParam(_i) => unimplemented!("Generics not yet supported"),
 			ElementType::Array { .. } => unimplemented!("Non-vector arrays not yet supported"),
 			ElementType::Generic { .. } => unimplemented!("Generics not yet supported"),
 			ElementType::TypedReference => unimplemented!("Typed references not yet supported"),
@@ -261,7 +261,7 @@ impl Type {
 				clr.clone(),
 				Type::get_type_for_element_type(clr, metadata, et)?,
 			),
-			ElementType::MethodGenericParam(i) => unimplemented!("Generics not yet supported"),
+			ElementType::MethodGenericParam(_i) => unimplemented!("Generics not yet supported"),
 			_ => return Err(format!("Invalid element type {:?}", e)),
 		})
 	}

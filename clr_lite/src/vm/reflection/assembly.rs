@@ -1,4 +1,4 @@
-use crate::metadata::tables::{MethodDefHandle, TableType, TypeDefOrRefHandle};
+use crate::metadata::tables::TypeDefOrRefHandle;
 use crate::metadata::*;
 use crate::vm::*;
 

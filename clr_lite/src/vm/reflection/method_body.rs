@@ -86,7 +86,7 @@ impl MethodBody {
 							.map_err(|_| "Invalid method body".to_string())?
 							as usize;
 						let mut locals = Vec::with_capacity(locals_count);
-						for i in 0..locals_count {
+						for _ in 0..locals_count {
 							locals.push(Type::get_type_for_element_type(
 								clr.clone(),
 								metadata,

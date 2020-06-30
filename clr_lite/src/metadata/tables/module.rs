@@ -40,7 +40,7 @@ impl TableRow for Module {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::metadata::tables::*;
+	
 
 	#[test]
 	fn test_module() {

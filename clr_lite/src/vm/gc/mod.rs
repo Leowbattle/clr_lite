@@ -2,7 +2,7 @@
 use crate::vm::*;
 
 use std::cell::RefCell;
-use std::rc::{Rc, Weak};
+use std::rc::Weak;
 
 pub mod raw_object;
 pub use raw_object::*;

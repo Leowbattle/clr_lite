@@ -117,14 +117,6 @@ mod tests {
 			.map(|i| (metadata.strings().get(i.name).unwrap(), i))
 			.collect::<HashMap<_, _>>();
 
-		let module_refs = metadata
-			.tables()
-			.module_ref
-			.rows()
-			.iter()
-			.map(|m| metadata.strings().get(m.name).unwrap())
-			.collect::<Box<_>>();
-
 		assert_eq!(
 			metadata
 				.strings()

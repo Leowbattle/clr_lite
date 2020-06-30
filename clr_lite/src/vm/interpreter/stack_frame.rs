@@ -1,7 +1,7 @@
-use crate::vm::gc::*;
+
 use crate::vm::interpreter::*;
-use crate::vm::reflection::*;
-use crate::vm::*;
+
+
 
 use std::mem::size_of;
 use std::slice;
@@ -42,7 +42,7 @@ impl<'a> StackFrame<'a> {
 		};
 
 		// Allocate storage for local variables on the managed stack.
-		let mut locals = unsafe {
+		let locals = unsafe {
 			let count = body.local_variables().len();
 			slice::from_raw_parts_mut(
 				self.stackalloc(count * size_of::<Value>()).as_mut_ptr() as *mut Value,

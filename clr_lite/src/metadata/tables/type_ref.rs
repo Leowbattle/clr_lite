@@ -39,7 +39,7 @@ impl TableRow for TypeRef {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::metadata::tables::*;
+	
 
 	#[test]
 	fn test_type_ref() {
