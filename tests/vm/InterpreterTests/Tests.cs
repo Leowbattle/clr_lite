@@ -567,5 +567,103 @@ namespace InterpreterTests
 			return arg_255;
 		}
 		#endregion
+
+		#region Function call
+		static void CallEmpty()
+		{
+			Empty();
+		}
+
+		static float ReturnValue()
+		{
+			return Ldc_R4();
+		}
+		#endregion
+
+		#region Jump
+		int Goto()
+		{
+			goto l2;
+			l1:
+			return 4;
+			l2:
+			goto l1;
+			return 0;
+		}
+
+		int Br()
+		{
+			goto l2;
+			l1:
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			Empty();
+			return 4;
+			l2:
+			goto l1;
+			return 0;
+		}
+
+		static int Brfalse_S(bool b)
+		{
+			if (b == false)
+			{
+				return 1;
+			}
+			else
+			{
+				return 0;
+			}
+		}
+
+		static int Brtrue_S(bool b)
+		{
+			if (b == true)
+			{
+				return 1;
+			}
+			else
+			{
+				return 0;
+			}
+		}
+		#endregion
 	}
 }

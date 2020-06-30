@@ -1,3 +1,4 @@
+use crate::metadata::{tables::TableType, MetadataToken};
 use crate::vm::interpreter::*;
 
 use std::mem::size_of;
@@ -8,6 +9,7 @@ use num_traits::FromPrimitive;
 pub(super) struct StackFrame<'a> {
 	clr: ClrLite,
 	interpreter: &'a mut Interpreter,
+	assembly: Assembly,
 	method: Method,
 	amount_allocated: usize,
 
@@ -25,6 +27,7 @@ impl<'a> StackFrame<'a> {
 		StackFrame {
 			clr,
 			interpreter,
+			assembly: method.declaring_type().unwrap().assembly().unwrap(),
 			method,
 			amount_allocated: 0,
 			code,
@@ -138,12 +141,80 @@ impl<'a> StackFrame<'a> {
 					params[i] = self.pop();
 				}
 
+				Opcodes::Dup => self.push(self.peek()),
+				Opcodes::Pop => {
+					self.pop();
+				}
+
+				// TODO Limit recursion to stop stack overflow
+				Opcodes::Call => {
+					let token = self.il_get::<MetadataToken>();
+
+					const METHOD_DEF: usize = TableType::MethodDef as usize;
+					const MEMBER_REF: usize = TableType::MemberRef as usize;
+					let method = match token.table() {
+						METHOD_DEF => self
+							.assembly
+							.resolve_method_def(token.index())
+							.ok_or_else(|| format!("Unable to find method for token {}", token))?,
+						MEMBER_REF => unimplemented!(
+							"Calling methods outside current assembly not yet supported"
+						),
+						_ => return Err(format!("Invalid metadata token {} for method", token)),
+					};
+
+					// Allocate space on the stack for parameters
+					let params = unsafe {
+						let param_count = method.parameters().len();
+						let data = self.stackalloc(param_count * size_of::<Value>());
+						slice::from_raw_parts_mut(data.as_ptr() as *mut Value, param_count)
+					};
+
+					// Pop parameters off the operand stack and into the parameters
+					for p in params.iter_mut().rev() {
+						*p = self.pop();
+					}
+
+					let ret = self.interpreter.execute(method, params)?;
+					if let Some(value) = ret {
+						self.push(value);
+					}
+				}
+
 				Opcodes::Br_S => {
 					let offset = self.il_get::<i8>();
 					self.ip = ((self.ip as isize) + offset as isize) as usize;
 				}
+				Opcodes::Br => {
+					let offset = self.il_get::<i32>();
+					self.ip = ((self.ip as isize) + offset as isize) as usize;
+				}
+				Opcodes::Brfalse_S => {
+					let offset = self.il_get::<i8>();
+					if self.pop().is_null_or_zero() {
+						self.ip = ((self.ip as isize) + offset as isize) as usize;
+					}
+				}
+				Opcodes::Brtrue_S => {
+					let offset = self.il_get::<i8>();
+					if !self.pop().is_null_or_zero() {
+						self.ip = ((self.ip as isize) + offset as isize) as usize;
+					}
+				}
 
-				_ => return Err(format!("Use of unimplemented instruction {:?}", op)),
+				Opcodes::Ceq => {
+					let a = self.pop();
+					let b = self.pop();
+					self.push(Value::I32((a == b) as i32));
+				}
+
+				_ => {
+					return Err(format!(
+						"Use of unimplemented instruction {:?} at IL_{:04x}",
+						op,
+						self.ip - 1
+					))
+				}
 			}
 		}
 	}
@@ -177,6 +248,14 @@ impl<'a> StackFrame<'a> {
 
 	fn try_pop(&mut self) -> Option<Value> {
 		self.interpreter.operand_stack.pop()
+	}
+
+	fn peek(&self) -> Value {
+		self.try_peek().unwrap()
+	}
+
+	fn try_peek(&self) -> Option<Value> {
+		Some(*self.interpreter.operand_stack.last()?)
 	}
 
 	fn stackalloc<'b>(&'b mut self, size: usize) -> &'b mut [u8] {

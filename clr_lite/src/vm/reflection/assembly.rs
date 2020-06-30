@@ -138,7 +138,7 @@ impl Assembly {
 	}
 
 	pub fn resolve_method_def(&self, i: usize) -> Option<Method> {
-		Some(self.0.method_defs.borrow().get(i)?.clone())
+		Some(self.0.method_defs.borrow().get(i - 1)?.clone())
 	}
 }
 

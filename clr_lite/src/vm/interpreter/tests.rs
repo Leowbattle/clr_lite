@@ -58,3 +58,47 @@ fn test_parameters() {
 		Ok(Some(Value::I32(10)))
 	);
 }
+
+#[test]
+fn test_call_empty() {
+	assert_eq!(run("CallEmpty", &mut []), Ok(None));
+}
+
+#[test]
+fn test_return_value() {
+	assert_eq!(run("ReturnValue", &mut []), Ok(Some(Value::F32(3.14159))));
+}
+
+#[test]
+fn test_goto() {
+	assert_eq!(run("Goto", &mut []), Ok(Some(Value::I32(4))));
+}
+
+#[test]
+fn test_br() {
+	assert_eq!(run("Br", &mut []), Ok(Some(Value::I32(4))));
+}
+
+#[test]
+fn Brfalse_S() {
+	assert_eq!(
+		run("Brfalse_S", &mut [Value::I32(0)]),
+		Ok(Some(Value::I32(1)))
+	);
+	assert_eq!(
+		run("Brfalse_S", &mut [Value::I32(1)]),
+		Ok(Some(Value::I32(0)))
+	);
+}
+
+#[test]
+fn Brtrue_S() {
+	assert_eq!(
+		run("Brtrue_S", &mut [Value::I32(0)]),
+		Ok(Some(Value::I32(0)))
+	);
+	assert_eq!(
+		run("Brtrue_S", &mut [Value::I32(1)]),
+		Ok(Some(Value::I32(1)))
+	);
+}
