@@ -80,7 +80,7 @@ fn test_br() {
 }
 
 #[test]
-fn Brfalse_S() {
+fn test_br_false_s() {
 	assert_eq!(
 		run("Brfalse_S", &mut [Value::I32(0)]),
 		Ok(Some(Value::I32(1)))
@@ -92,7 +92,7 @@ fn Brfalse_S() {
 }
 
 #[test]
-fn Brtrue_S() {
+fn test_br_true_s() {
 	assert_eq!(
 		run("Brtrue_S", &mut [Value::I32(0)]),
 		Ok(Some(Value::I32(0)))
@@ -101,4 +101,28 @@ fn Brtrue_S() {
 		run("Brtrue_S", &mut [Value::I32(1)]),
 		Ok(Some(Value::I32(1)))
 	);
+}
+
+#[test]
+fn test_gt() {
+	assert_eq!(run("Gt", &mut [Value::I32(4)]), Ok(Some(Value::I32(4))));
+	assert_eq!(run("Gt", &mut [Value::I32(100)]), Ok(Some(Value::I32(5))));
+}
+
+#[test]
+fn test_lt() {
+	assert_eq!(run("Lt", &mut [Value::I32(4)]), Ok(Some(Value::I32(5))));
+	assert_eq!(run("Lt", &mut [Value::I32(100)]), Ok(Some(Value::I32(4))));
+}
+
+#[test]
+fn test_ge() {
+	assert_eq!(run("Ge", &mut [Value::I32(4)]), Ok(Some(Value::I32(4))));
+	assert_eq!(run("Ge", &mut [Value::I32(100)]), Ok(Some(Value::I32(5))));
+}
+
+#[test]
+fn test_le() {
+	assert_eq!(run("Le", &mut [Value::I32(4)]), Ok(Some(Value::I32(5))));
+	assert_eq!(run("Le", &mut [Value::I32(100)]), Ok(Some(Value::I32(4))));
 }

@@ -189,9 +189,21 @@ impl<'a> StackFrame<'a> {
 					let offset = self.il_get::<i32>();
 					self.ip = ((self.ip as isize) + offset as isize) as usize;
 				}
+				Opcodes::Brfalse => {
+					let offset = self.il_get::<i32>();
+					if self.pop().is_null_or_zero() {
+						self.ip = ((self.ip as isize) + offset as isize) as usize;
+					}
+				}
 				Opcodes::Brfalse_S => {
 					let offset = self.il_get::<i8>();
 					if self.pop().is_null_or_zero() {
+						self.ip = ((self.ip as isize) + offset as isize) as usize;
+					}
+				}
+				Opcodes::Brtrue => {
+					let offset = self.il_get::<i32>();
+					if !self.pop().is_null_or_zero() {
 						self.ip = ((self.ip as isize) + offset as isize) as usize;
 					}
 				}
@@ -201,11 +213,101 @@ impl<'a> StackFrame<'a> {
 						self.ip = ((self.ip as isize) + offset as isize) as usize;
 					}
 				}
+				Opcodes::Beq => {
+					let a = self.pop();
+					let b = self.pop();
+					let offset = self.il_get::<i32>();
+					if a == b {
+						self.ip = ((self.ip as isize) + offset as isize) as usize;
+					}
+				}
+				Opcodes::Beq_S => {
+					let a = self.pop();
+					let b = self.pop();
+					let offset = self.il_get::<i8>();
+					if a == b {
+						self.ip = ((self.ip as isize) + offset as isize) as usize;
+					}
+				}
+				Opcodes::Bge => {
+					let b = self.pop();
+					let a = self.pop();
+					let offset = self.il_get::<i32>();
+					if a >= b {
+						self.ip = ((self.ip as isize) + offset as isize) as usize;
+					}
+				}
+				Opcodes::Bge_S => {
+					let b = self.pop();
+					let a = self.pop();
+					let offset = self.il_get::<i8>();
+					if a >= b {
+						self.ip = ((self.ip as isize) + offset as isize) as usize;
+					}
+				}
+				Opcodes::Bgt => {
+					let b = self.pop();
+					let a = self.pop();
+					let offset = self.il_get::<i32>();
+					if a > b {
+						self.ip = ((self.ip as isize) + offset as isize) as usize;
+					}
+				}
+				Opcodes::Bgt_S => {
+					let b = self.pop();
+					let a = self.pop();
+					let offset = self.il_get::<i8>();
+					if a > b {
+						self.ip = ((self.ip as isize) + offset as isize) as usize;
+					}
+				}
+				Opcodes::Ble => {
+					let b = self.pop();
+					let a = self.pop();
+					let offset = self.il_get::<i32>();
+					if a <= b {
+						self.ip = ((self.ip as isize) + offset as isize) as usize;
+					}
+				}
+				Opcodes::Ble_S => {
+					let b = self.pop();
+					let a = self.pop();
+					let offset = self.il_get::<i8>();
+					if a <= b {
+						self.ip = ((self.ip as isize) + offset as isize) as usize;
+					}
+				}
+				Opcodes::Blt => {
+					let b = self.pop();
+					let a = self.pop();
+					let offset = self.il_get::<i32>();
+					if a < b {
+						self.ip = ((self.ip as isize) + offset as isize) as usize;
+					}
+				}
+				Opcodes::Blt_S => {
+					let b = self.pop();
+					let a = self.pop();
+					let offset = self.il_get::<i8>();
+					if a < b {
+						self.ip = ((self.ip as isize) + offset as isize) as usize;
+					}
+				}
 
 				Opcodes::Ceq => {
 					let a = self.pop();
 					let b = self.pop();
 					self.push(Value::I32((a == b) as i32));
+				}
+				Opcodes::Cgt | Opcodes::Cgt_Un => {
+					let b = self.pop();
+					let a = self.pop();
+					self.push(Value::I32((a > b) as i32));
+				}
+				Opcodes::Clt | Opcodes::Clt_Un => {
+					let b = self.pop();
+					let a = self.pop();
+					self.push(Value::I32((a < b) as i32));
 				}
 
 				_ => {

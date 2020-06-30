@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace InterpreterTests
 {
+	/// <summary>
+	/// This class contains test cases for supported CIL instructions in ClrLite.
+	/// </summary>
 	class Tests
 	{
 		static void Empty() { }
@@ -580,7 +584,7 @@ namespace InterpreterTests
 		}
 		#endregion
 
-		#region Jump
+		#region Jump and comparisons
 		int Goto()
 		{
 			goto l2;
@@ -662,6 +666,54 @@ namespace InterpreterTests
 			else
 			{
 				return 0;
+			}
+		}
+
+		static int Gt(int x)
+		{
+			if (x > 10)
+			{
+				return 5;
+			}
+			else
+			{
+				return 4;
+			}
+		}
+
+		static int Lt(int x)
+		{
+			if (x < 10)
+			{
+				return 5;
+			}
+			else
+			{
+				return 4;
+			}
+		}
+
+		static int Ge(int x)
+		{
+			if (x >= 10)
+			{
+				return 5;
+			}
+			else
+			{
+				return 4;
+			}
+		}
+
+		static int Le(int x)
+		{
+			if (x <= 10)
+			{
+				return 5;
+			}
+			else
+			{
+				return 4;
 			}
 		}
 		#endregion
