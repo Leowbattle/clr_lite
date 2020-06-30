@@ -2,7 +2,8 @@ use crate::vm::interpreter::*;
 use crate::vm::reflection::*;
 
 ///! The data for fields of an object or value type
-#[derive(Debug, Copy, Clone)]
+// TODO (urgent) Make Eq compare actual value rather than pointer, which is wrong but temporary.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct RawObject(*mut u8);
 
 impl RawObject {

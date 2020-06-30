@@ -12,6 +12,8 @@ pub use value::*;
 pub mod opcodes;
 pub use opcodes::*;
 
+pub type RunResult = Result<Option<Value>, String>;
+
 pub(crate) struct Interpreter {
 	pub clr: Option<Weak<RefCell<ClrInternal>>>,
 	pub stackalloc: Vec<u8>,
@@ -27,7 +29,7 @@ impl Interpreter {
 		}
 	}
 
-	pub fn execute(&mut self, m: Method) -> Result<(), String> {
+	pub fn execute(&mut self, m: Method) -> RunResult {
 		StackFrame::new(self.clr(), self, m).execute()
 	}
 
@@ -35,3 +37,6 @@ impl Interpreter {
 		ClrLite(self.clr.as_ref().unwrap().upgrade().unwrap())
 	}
 }
+
+#[cfg(test)]
+mod tests;

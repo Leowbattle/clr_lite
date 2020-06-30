@@ -6,8 +6,7 @@ namespace EmptyExe
 	{
 		static void Main(string[] args)
 		{
-			int x = 1;
-			int y = x;
+
 		}
 	}
 }

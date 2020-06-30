@@ -9,7 +9,9 @@
 			"type": "cppvsdbg",
 			"request": "launch",
 			"program": "${workspaceFolder}/target/debug/test_program.exe",
-			"args": [],
+			"args": [
+				"tests/EmptyExe/bin/Debug/netcoreapp3.1/EmptyExe.dll"
+			],
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}",
 			"environment": [],

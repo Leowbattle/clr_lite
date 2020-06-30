@@ -35,7 +35,7 @@ impl<'a> StackFrame<'a> {
 		}
 	}
 
-	pub fn execute(&mut self) -> Result<(), String> {
+	pub fn execute(&mut self) -> RunResult {
 		let body = match self.method.implementation() {
 			MethodImplementation::IL(b) => b,
 			_ => unreachable!(),
@@ -66,7 +66,15 @@ impl<'a> StackFrame<'a> {
 			let op = self.get_opcode();
 			match op {
 				Opcodes::Nop => {}
-				Opcodes::Ret => return Ok(()),
+
+				// TODO Box struct return values
+				Opcodes::Ret => {
+					return if self.method.return_type() == self.clr.get_type("System.Void") {
+						Ok(None)
+					} else {
+						Ok(self.try_pop())
+					}
+				}
 
 				Opcodes::Ldc_I4_M1 => self.push(Value::I32(-1)),
 				Opcodes::Ldc_I4_0 => self.push(Value::I32(0)),
@@ -124,11 +132,14 @@ impl<'a> StackFrame<'a> {
 				Opcodes::Stloc_2 => locals[2] = self.pop(),
 				Opcodes::Stloc_3 => locals[3] = self.pop(),
 
+				Opcodes::Br_S => {
+					let offset = self.il_get::<i8>();
+					self.ip = ((self.ip as isize) + offset as isize) as usize;
+				}
+
 				_ => return Err(format!("Use of unimplemented instruction {:?}", op)),
 			}
 		}
-
-		Ok(())
 	}
 
 	fn get_opcode(&mut self) -> Opcodes {
@@ -155,7 +166,11 @@ impl<'a> StackFrame<'a> {
 	}
 
 	fn pop(&mut self) -> Value {
-		self.interpreter.operand_stack.pop().unwrap()
+		self.try_pop().unwrap()
+	}
+
+	fn try_pop(&mut self) -> Option<Value> {
+		self.interpreter.operand_stack.pop()
 	}
 
 	fn stackalloc<'b>(&'b mut self, size: usize) -> &'b mut [u8] {

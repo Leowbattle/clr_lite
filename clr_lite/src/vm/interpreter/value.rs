@@ -1,6 +1,6 @@
 use crate::vm::interpreter::*;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Value {
 	I8(i8),
 	U8(u8),

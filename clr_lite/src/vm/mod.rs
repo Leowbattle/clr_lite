@@ -21,6 +21,7 @@ pub struct ClrLite(pub(crate) Rc<RefCell<ClrInternal>>);
 impl ClrLite {
 	pub fn new_runtime() -> Result<ClrLite, String> {
 		let mut clr = ClrLite(Rc::new(RefCell::new(ClrInternal::new_runtime()?)));
+		clr.load_builtin_assemblies()?;
 		clr.0.borrow().heap.borrow_mut().clr = Some(Rc::downgrade(&clr.0));
 		clr.0.borrow().interpreter.borrow_mut().clr = Some(Rc::downgrade(&clr.0));
 		Ok(clr)
@@ -49,14 +50,49 @@ impl ClrLite {
 
 	pub fn load_assembly_from_path(&mut self, path: impl AsRef<Path>) -> Result<Assembly, String> {
 		let data = fs::read(path).map_err(|e| e.to_string())?;
+		self.load_assembly_from_data(&data)
+	}
+
+	pub fn load_assembly_from_data(&mut self, data: &[u8]) -> Result<Assembly, String> {
 		Assembly::load(self.clone(), &data)
+	}
+
+	fn load_builtin_assemblies(&mut self) -> Result<(), String> {
+		#[cfg(debug_assertions)]
+		macro_rules! builtin_assemblies {
+			($($name:expr),*) => {
+				$(
+					self.load_assembly_from_data(
+						include_bytes!(concat!("../../../libraries/", $name, "/bin/Debug/netcoreapp3.1/", $name, ".dll"))
+					)?;
+				)*
+			};
+		}
+
+		#[cfg(not(debug_assertions))]
+		macro_rules! builtin_assemblies {
+			($($name:expr),*) => {
+				$(
+					self.load_assembly_from_data(
+						include_bytes!(concat!("../../../libraries/", $name, "/bin/Debug/netcoreapp3.1/", $name, ".dll"))
+					)?;
+				)*
+			};
+		}
+
+		builtin_assemblies! {
+			"System.Runtime",
+			"System.Console"
+		}
+
+		Ok(())
 	}
 
 	pub fn get_type(&self, name: &str) -> Option<Type> {
 		Some(self.0.borrow().type_map.get(name)?.clone())
 	}
 
-	pub fn execute(&mut self, m: Method) -> Result<(), String> {
+	pub fn execute(&mut self, m: Method) -> RunResult {
 		self.0.borrow().interpreter.borrow_mut().execute(m)
 	}
 }
