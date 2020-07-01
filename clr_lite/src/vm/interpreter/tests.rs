@@ -17,6 +17,14 @@ fn test_empty() {
 }
 
 #[test]
+fn test_fibonacci() {
+	assert_eq!(
+		run("Fibonacci", &mut [Value::I32(10)]),
+		Ok(Some(Value::I32(55)))
+	);
+}
+
+#[test]
 fn test_ldc_i4_m1() {
 	assert_eq!(run("Ldc_I4_M1", &mut []), Ok(Some(Value::I32(-1))));
 }

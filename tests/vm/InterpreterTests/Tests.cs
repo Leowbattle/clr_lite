@@ -12,6 +12,15 @@ namespace InterpreterTests
 	{
 		static void Empty() { }
 
+		static int Fibonacci(int n)
+		{
+			if (n < 2)
+			{
+				return n;
+			}
+			return Fibonacci(n - 1) + Fibonacci(n - 2);
+		}
+
 		#region Number loading
 		static int Ldc_I4_M1()
 		{
