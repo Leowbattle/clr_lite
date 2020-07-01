@@ -325,15 +325,49 @@ impl<'a> StackFrame<'a> {
 					let a = self.pop();
 					self.push(a * b);
 				}
-				Opcodes::Div => {
+				Opcodes::Div | Opcodes::Div_Un => {
 					let b = self.pop();
 					let a = self.pop();
 					self.push(a / b);
 				}
-				Opcodes::Rem => {
+				Opcodes::Rem | Opcodes::Rem_Un => {
 					let b = self.pop();
 					let a = self.pop();
 					self.push(a % b);
+				}
+				Opcodes::Neg => {
+					let val = self.pop();
+					self.push(-val);
+				}
+
+				Opcodes::And => {
+					let b = self.pop();
+					let a = self.pop();
+					self.push(a & b);
+				}
+				Opcodes::Or => {
+					let b = self.pop();
+					let a = self.pop();
+					self.push(a | b);
+				}
+				Opcodes::Xor => {
+					let b = self.pop();
+					let a = self.pop();
+					self.push(a ^ b);
+				}
+				Opcodes::Not => {
+					let val = self.pop();
+					self.push(!val);
+				}
+				Opcodes::Shl => {
+					let b = self.pop();
+					let a = self.pop();
+					self.push(a << b);
+				}
+				Opcodes::Shr => {
+					let b = self.pop();
+					let a = self.pop();
+					self.push(a >> b);
 				}
 
 				_ => {

@@ -32,7 +32,7 @@ impl Value {
 			Value::U64(x) => x == 0,
 			Value::F32(x) => x == 0f32,
 			Value::F64(x) => x == 0f64,
-			_ => unimplemented!(),
+			_ => unimplemented!("Cannot check if {:?} is null or zero", self),
 		}
 	}
 }
@@ -51,7 +51,7 @@ impl PartialOrd for Value {
 			(Value::U64(a), Value::U64(b)) => a.partial_cmp(&b),
 			(Value::F32(a), Value::F32(b)) => a.partial_cmp(&b),
 			(Value::F64(a), Value::F64(b)) => a.partial_cmp(&b),
-			_ => unimplemented!(),
+			_ => unimplemented!("Cannot compare {:?} and {:?}", self, other),
 		}
 	}
 }
@@ -72,7 +72,7 @@ impl Add for Value {
 			(Value::U64(a), Value::U64(b)) => Value::U64(a + b),
 			(Value::F32(a), Value::F32(b)) => Value::F32(a + b),
 			(Value::F64(a), Value::F64(b)) => Value::F64(a + b),
-			_ => unimplemented!(),
+			_ => unimplemented!("Cannot add {:?} and {:?}", self, rhs),
 		}
 	}
 }
@@ -93,7 +93,7 @@ impl Sub for Value {
 			(Value::U64(a), Value::U64(b)) => Value::U64(a - b),
 			(Value::F32(a), Value::F32(b)) => Value::F32(a - b),
 			(Value::F64(a), Value::F64(b)) => Value::F64(a - b),
-			_ => unimplemented!(),
+			_ => unimplemented!("Cannot subtract {:?} and {:?}", self, rhs),
 		}
 	}
 }
@@ -114,7 +114,7 @@ impl Mul for Value {
 			(Value::U64(a), Value::U64(b)) => Value::U64(a * b),
 			(Value::F32(a), Value::F32(b)) => Value::F32(a * b),
 			(Value::F64(a), Value::F64(b)) => Value::F64(a * b),
-			_ => unimplemented!(),
+			_ => unimplemented!("Cannot multiply {:?} by {:?}", self, rhs),
 		}
 	}
 }
@@ -135,7 +135,7 @@ impl Div for Value {
 			(Value::U64(a), Value::U64(b)) => Value::U64(a / b),
 			(Value::F32(a), Value::F32(b)) => Value::F32(a / b),
 			(Value::F64(a), Value::F64(b)) => Value::F64(a / b),
-			_ => unimplemented!(),
+			_ => unimplemented!("Cannot divide {:?} by {:?}", self, rhs),
 		}
 	}
 }
@@ -156,7 +156,138 @@ impl Rem for Value {
 			(Value::U64(a), Value::U64(b)) => Value::U64(a % b),
 			(Value::F32(a), Value::F32(b)) => Value::F32(a % b),
 			(Value::F64(a), Value::F64(b)) => Value::F64(a % b),
-			_ => unimplemented!(),
+			_ => unimplemented!("Cannot {:?} % {:?}", self, rhs),
+		}
+	}
+}
+
+impl Neg for Value {
+	type Output = Value;
+
+	#[inline(always)]
+	fn neg(self) -> Value {
+		match self {
+			Value::I8(x) => Value::I8(-x),
+			Value::I16(x) => Value::I16(-x),
+			Value::I32(x) => Value::I32(-x),
+			Value::I64(x) => Value::I64(-x),
+			Value::F32(x) => Value::F32(-x),
+			Value::F64(x) => Value::F64(-x),
+			_ => unimplemented!("Cannot negate {:?}", self),
+		}
+	}
+}
+
+impl BitAnd for Value {
+	type Output = Value;
+
+	#[inline(always)]
+	fn bitand(self, rhs: Value) -> Value {
+		match (self, rhs) {
+			(Value::I8(a), Value::I8(b)) => Value::I8(a & b),
+			(Value::U8(a), Value::U8(b)) => Value::U8(a & b),
+			(Value::I16(a), Value::I16(b)) => Value::I16(a & b),
+			(Value::U16(a), Value::U16(b)) => Value::U16(a & b),
+			(Value::I32(a), Value::I32(b)) => Value::I32(a & b),
+			(Value::U32(a), Value::U32(b)) => Value::U32(a & b),
+			(Value::I64(a), Value::I64(b)) => Value::I64(a & b),
+			(Value::U64(a), Value::U64(b)) => Value::U64(a & b),
+			_ => unimplemented!("Cannot {:?} && {:?}", self, rhs),
+		}
+	}
+}
+
+impl BitOr for Value {
+	type Output = Value;
+
+	#[inline(always)]
+	fn bitor(self, rhs: Value) -> Value {
+		match (self, rhs) {
+			(Value::I8(a), Value::I8(b)) => Value::I8(a | b),
+			(Value::U8(a), Value::U8(b)) => Value::U8(a | b),
+			(Value::I16(a), Value::I16(b)) => Value::I16(a | b),
+			(Value::U16(a), Value::U16(b)) => Value::U16(a | b),
+			(Value::I32(a), Value::I32(b)) => Value::I32(a | b),
+			(Value::U32(a), Value::U32(b)) => Value::U32(a | b),
+			(Value::I64(a), Value::I64(b)) => Value::I64(a | b),
+			(Value::U64(a), Value::U64(b)) => Value::U64(a | b),
+			_ => unimplemented!("Cannot {:?} || {:?}", self, rhs),
+		}
+	}
+}
+
+impl BitXor for Value {
+	type Output = Value;
+
+	#[inline(always)]
+	fn bitxor(self, rhs: Value) -> Value {
+		match (self, rhs) {
+			(Value::I8(a), Value::I8(b)) => Value::I8(a ^ b),
+			(Value::U8(a), Value::U8(b)) => Value::U8(a ^ b),
+			(Value::I16(a), Value::I16(b)) => Value::I16(a ^ b),
+			(Value::U16(a), Value::U16(b)) => Value::U16(a ^ b),
+			(Value::I32(a), Value::I32(b)) => Value::I32(a ^ b),
+			(Value::U32(a), Value::U32(b)) => Value::U32(a ^ b),
+			(Value::I64(a), Value::I64(b)) => Value::I64(a ^ b),
+			(Value::U64(a), Value::U64(b)) => Value::U64(a ^ b),
+			_ => unimplemented!("Cannot {:?} ^ {:?}", self, rhs),
+		}
+	}
+}
+
+impl Shl for Value {
+	type Output = Value;
+
+	#[inline(always)]
+	fn shl(self, rhs: Value) -> Value {
+		match (self, rhs) {
+			(Value::I8(a), Value::I8(b)) => Value::I8(a << b),
+			(Value::U8(a), Value::U8(b)) => Value::U8(a << b),
+			(Value::I16(a), Value::I16(b)) => Value::I16(a << b),
+			(Value::U16(a), Value::U16(b)) => Value::U16(a << b),
+			(Value::I32(a), Value::I32(b)) => Value::I32(a << b),
+			(Value::U32(a), Value::U32(b)) => Value::U32(a << b),
+			(Value::I64(a), Value::I64(b)) => Value::I64(a << b),
+			(Value::U64(a), Value::U64(b)) => Value::U64(a << b),
+			_ => unimplemented!("Cannot {:?} << {:?}", self, rhs),
+		}
+	}
+}
+
+impl Shr for Value {
+	type Output = Value;
+
+	#[inline(always)]
+	fn shr(self, rhs: Value) -> Value {
+		match (self, rhs) {
+			(Value::I8(a), Value::I8(b)) => Value::I8(a >> b),
+			(Value::U8(a), Value::U8(b)) => Value::U8(a >> b),
+			(Value::I16(a), Value::I16(b)) => Value::I16(a >> b),
+			(Value::U16(a), Value::U16(b)) => Value::U16(a >> b),
+			(Value::I32(a), Value::I32(b)) => Value::I32(a >> b),
+			(Value::U32(a), Value::U32(b)) => Value::U32(a >> b),
+			(Value::I64(a), Value::I64(b)) => Value::I64(a >> b),
+			(Value::U64(a), Value::U64(b)) => Value::U64(a >> b),
+			_ => unimplemented!("Cannot {:?} >> {:?}", self, rhs),
+		}
+	}
+}
+
+impl Not for Value {
+	type Output = Value;
+
+	#[inline(always)]
+	fn not(self) -> Value {
+		match self {
+			Value::I8(x) => Value::I8(!x),
+			Value::U8(x) => Value::U8(!x),
+			Value::I16(x) => Value::I16(!x),
+			Value::U16(x) => Value::U16(!x),
+			Value::I32(x) => Value::I32(!x),
+			Value::U32(x) => Value::U32(!x),
+			Value::I64(x) => Value::I64(!x),
+			Value::U64(x) => Value::U64(!x),
+			_ => unimplemented!("Cannot !{:?}", self),
 		}
 	}
 }

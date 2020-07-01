@@ -1,12 +1,12 @@
 use crate::vm::interpreter::*;
 
+const DATA: &'static [u8] = include_bytes!(
+	"../../../../tests/vm/InterpreterTests/bin/Debug/netcoreapp3.1/InterpreterTests.dll"
+);
+
 fn run(func_name: &str, params: &mut [Value]) -> Result<Option<Value>, String> {
 	let mut clr = ClrLite::new_runtime().unwrap();
-	let _a = clr
-		.load_assembly_from_path(
-			"../tests/vm/InterpreterTests/bin/Debug/netcoreapp3.1/InterpreterTests.dll",
-		)
-		.unwrap();
+	let _a = clr.load_assembly_from_data(DATA).unwrap();
 	let tests = clr.get_type("InterpreterTests.Tests").unwrap();
 	clr.execute(tests.get_method(func_name).unwrap(), params)
 }
@@ -175,10 +175,125 @@ fn test_div() {
 		run("Div", &mut [Value::I32(100), Value::I32(4)]),
 		Ok(Some(Value::I32(25)))
 	);
+	assert_eq!(
+		run("Div_Un", &mut [Value::I32(100), Value::I32(4)]),
+		Ok(Some(Value::I32(25)))
+	);
 }
 
 #[test]
 fn test_rem() {
 	assert_eq!(run("IsEven", &mut [Value::I32(4)]), Ok(Some(Value::I32(1))));
 	assert_eq!(run("IsEven", &mut [Value::I32(5)]), Ok(Some(Value::I32(0))));
+
+	assert_eq!(
+		run("IsEven_Un", &mut [Value::I32(100)]),
+		Ok(Some(Value::I32(1)))
+	);
+	assert_eq!(
+		run("IsEven_Un", &mut [Value::I32(55)]),
+		Ok(Some(Value::I32(0)))
+	);
+}
+
+#[test]
+fn test_negate() {
+	assert_eq!(
+		run("Negate", &mut [Value::I32(1)]),
+		Ok(Some(Value::I32(-1)))
+	);
+	assert_eq!(
+		run("Negate", &mut [Value::I32(-55)]),
+		Ok(Some(Value::I32(55)))
+	);
+
+	assert_eq!(
+		run("NegateFloat", &mut [Value::F32(3.14159)]),
+		Ok(Some(Value::F32(-3.14159)))
+	);
+}
+
+#[test]
+fn test_bitwise() {
+	assert_eq!(
+		run("BitAnd", &mut [Value::I32(10), Value::I32(14)]),
+		Ok(Some(Value::I32(10 & 14)))
+	);
+
+	assert_eq!(
+		run("BitOr", &mut [Value::I32(10), Value::I32(14)]),
+		Ok(Some(Value::I32(10 | 14)))
+	);
+
+	assert_eq!(
+		run("BitXor", &mut [Value::I32(10), Value::I32(14)]),
+		Ok(Some(Value::I32(10 ^ 14)))
+	);
+
+	assert_eq!(
+		run("BitNot", &mut [Value::I32(10)]),
+		Ok(Some(Value::I32(!10)))
+	);
+
+	assert_eq!(
+		run("Shl", &mut [Value::I32(1000), Value::I32(2)]),
+		Ok(Some(Value::I32(1000 << 2)))
+	);
+
+	assert_eq!(
+		run("Shr", &mut [Value::I32(1000), Value::I32(2)]),
+		Ok(Some(Value::I32(1000 >> 2)))
+	);
+}
+
+#[test]
+fn test_logic_and() {
+	assert_eq!(
+		run("LogicAnd", &mut [Value::I32(0), Value::I32(0)]),
+		Ok(Some(Value::I32(0)))
+	);
+	assert_eq!(
+		run("LogicAnd", &mut [Value::I32(0), Value::I32(1)]),
+		Ok(Some(Value::I32(0)))
+	);
+	assert_eq!(
+		run("LogicAnd", &mut [Value::I32(1), Value::I32(0)]),
+		Ok(Some(Value::I32(0)))
+	);
+	assert_eq!(
+		run("LogicAnd", &mut [Value::I32(1), Value::I32(1)]),
+		Ok(Some(Value::I32(1)))
+	);
+}
+
+#[test]
+fn test_logic_or() {
+	assert_eq!(
+		run("LogicOr", &mut [Value::I32(0), Value::I32(0)]),
+		Ok(Some(Value::I32(0)))
+	);
+	assert_eq!(
+		run("LogicOr", &mut [Value::I32(0), Value::I32(1)]),
+		Ok(Some(Value::I32(1)))
+	);
+	assert_eq!(
+		run("LogicOr", &mut [Value::I32(1), Value::I32(0)]),
+		Ok(Some(Value::I32(1)))
+	);
+	assert_eq!(
+		run("LogicOr", &mut [Value::I32(1), Value::I32(1)]),
+		Ok(Some(Value::I32(1)))
+	);
+}
+
+#[test]
+fn test_logic_not() {
+	assert_eq!(
+		run("LogicNot", &mut [Value::I32(0)]),
+		Ok(Some(Value::I32(1)))
+	);
+	assert_eq!(
+		run("LogicNot", &mut [Value::I32(1)]),
+		Ok(Some(Value::I32(0)))
+	);
 }

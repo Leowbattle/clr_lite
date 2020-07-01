@@ -753,9 +753,78 @@ namespace InterpreterTests
 			return a / b;
 		}
 
+		static uint Div_Un(uint a, uint b)
+		{
+			return a / b;
+		}
+
 		static bool IsEven(int a)
 		{
 			return a % 2 == 0;
+		}
+
+		static bool IsEven_Un(uint a)
+		{
+			return a % 2 == 0;
+		}
+
+		static int Negate(int x)
+		{
+			return -x;
+		}
+
+		static float NegateFloat(float f)
+		{
+			return -f;
+		}
+		#endregion
+
+		#region Bitwise
+		static int BitAnd(int a, int b)
+		{
+			return a & b;
+		}
+
+		static int BitOr(int a, int b)
+		{
+			return a | b;
+		}
+
+		static int BitXor(int a, int b)
+		{
+			return a ^ b;
+		}
+
+		static int BitNot(int a)
+		{
+			return ~a;
+		}
+
+		static int Shl(int a, int b)
+		{
+			return a << b;
+		}
+
+		static int Shr(int a, int b)
+		{
+			return a >> b;
+		}
+		#endregion
+
+		#region Logic
+		static bool LogicAnd(bool a, bool b)
+		{
+			return a && b;
+		}
+
+		static bool LogicOr(bool a, bool b)
+		{
+			return a || b;
+		}
+
+		static bool LogicNot(bool b)
+		{
+			return !b;
 		}
 		#endregion
 	}
