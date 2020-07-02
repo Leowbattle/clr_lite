@@ -1,4 +1,4 @@
-use crate::metadata::tables::TypeDefOrRefHandle;
+use crate::metadata::tables::{MemberRefParentHandle, TableType, TypeDefOrRefHandle};
 use crate::metadata::*;
 use crate::vm::*;
 
@@ -30,6 +30,46 @@ impl Assembly {
 			}
 		}
 
+		// Get methods referenced by this assembly.
+		let mut method_refs = Vec::with_capacity(metadata.tables().member_ref.rows().len());
+		for mr in metadata.tables().member_ref.rows() {
+			match mr.parent {
+				MemberRefParentHandle::TypeRefHandle(h) => {
+					let type_ref = &metadata.tables().type_ref[h];
+					let type_name = metadata.strings().get(type_ref.name).unwrap().to_string();
+					let type_namespace = metadata
+						.strings()
+						.get(type_ref.namespace)
+						.unwrap()
+						.to_string();
+
+					let type_full_name = if type_namespace.is_empty() {
+						type_name.to_string()
+					} else {
+						format!("{}.{}", type_namespace, type_name)
+					};
+
+					let t = clr.get_type(&type_full_name).ok_or_else(|| {
+						format!("Cannot find type {} referenced by {}", type_full_name, name)
+					})?;
+
+					let method_name = metadata
+						.strings()
+						.get(mr.name)
+						.ok_or_else(|| format!("Unable to load methods referenced by {}", name))?;
+
+					let method = t.get_method(method_name).ok_or_else(|| {
+						format!(
+							"Unable to find {}.{} referenced by {}",
+							t, method_name, name
+						)
+					})?;
+					method_refs.push(method);
+				}
+				_ => continue,
+			}
+		}
+
 		let a = Assembly(Rc::new(AssemblyInternal {
 			clr: Rc::downgrade(&clr.0),
 			name,
@@ -37,6 +77,7 @@ impl Assembly {
 			entry_point: RefCell::new(None),
 
 			method_defs: RefCell::new(vec![]),
+			method_refs: method_refs,
 		}));
 
 		// Load type names
@@ -113,7 +154,7 @@ impl Assembly {
 		// Get entry point if one exists
 		if let Some(ep) = metadata.entry_point() {
 			*a.0.entry_point.borrow_mut() = Some(
-				a.resolve_method_def(ep.0)
+				a.resolve_method(MetadataToken::new(ep.0, TableType::MethodDef))
 					.ok_or_else(|| format!("Missing entry point for {}", a.name()))?,
 			);
 		}
@@ -137,8 +178,14 @@ impl Assembly {
 		self.0.entry_point.borrow().clone()
 	}
 
-	pub fn resolve_method_def(&self, i: usize) -> Option<Method> {
-		Some(self.0.method_defs.borrow().get(i - 1)?.clone())
+	pub fn resolve_method(&self, token: MetadataToken) -> Option<Method> {
+		const METHOD_DEF: usize = TableType::MethodDef as usize;
+		const MEMBER_REF: usize = TableType::MemberRef as usize;
+		match token.table() {
+			METHOD_DEF => Some(self.0.method_defs.borrow().get(token.index() - 1)?.clone()),
+			MEMBER_REF => Some(self.0.method_refs.get(token.index() - 1)?.clone()),
+			_ => None,
+		}
 	}
 }
 
@@ -161,4 +208,5 @@ pub(crate) struct AssemblyInternal {
 	entry_point: RefCell<Option<Method>>,
 
 	method_defs: RefCell<Vec<Method>>,
+	method_refs: Vec<Method>,
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace InterpreterTests
@@ -11,6 +12,8 @@ namespace InterpreterTests
 	class Tests
 	{
 		static void Empty() { }
+
+		void NonStatic() { }
 
 		static int Fibonacci(int n)
 		{
@@ -594,7 +597,7 @@ namespace InterpreterTests
 		#endregion
 
 		#region Jump and comparisons
-		int Goto()
+		static int Goto()
 		{
 			goto l2;
 			l1:
@@ -604,7 +607,7 @@ namespace InterpreterTests
 			return 0;
 		}
 
-		int Br()
+		static int Br()
 		{
 			goto l2;
 			l1:
@@ -827,5 +830,13 @@ namespace InterpreterTests
 			return !b;
 		}
 		#endregion
+
+		#region Objects
+		static void CreateObject()
+		{
+			object o = new object();
+		}
+		#endregion
 	}
 }
+

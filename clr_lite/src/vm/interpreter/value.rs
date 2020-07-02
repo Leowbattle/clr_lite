@@ -3,6 +3,8 @@ use crate::vm::interpreter::*;
 use std::cmp::Ordering;
 use std::ops::*;
 
+// TODO Maybe optimise small (< 8) byte structs to be stored in a u64.
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Value {
 	I8(i8),
@@ -15,7 +17,8 @@ pub enum Value {
 	U64(u64),
 	F32(f32),
 	F64(f64),
-	ValueType(RawObject),
+	ValueType(*mut RawObject),
+	Object(*mut Object),
 }
 
 impl Value {

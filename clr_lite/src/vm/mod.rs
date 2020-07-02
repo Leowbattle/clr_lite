@@ -93,7 +93,18 @@ impl ClrLite {
 	}
 
 	pub fn execute(&mut self, m: Method, params: &mut [Value]) -> RunResult {
+		if !m.is_static() {
+			return Err(format!(
+				"Non-static method {}.{} cannot be used as an entry point",
+				m.declaring_type().unwrap(),
+				m
+			));
+		}
 		self.0.borrow().interpreter.borrow_mut().execute(m, params)
+	}
+
+	pub(crate) fn next_type_id(&mut self) -> u32 {
+		self.0.borrow_mut().next_type_id()
 	}
 }
 
@@ -124,9 +135,10 @@ impl<'a> Deref for Types<'a> {
 pub(crate) struct ClrInternal {
 	assembly_load_paths: Vec<PathBuf>,
 	assemblies: Vec<Assembly>,
+	next_type_id: u32,
 	types: Vec<Type>,
 	type_map: HashMap<String, Type>,
-	heap: RefCell<GcHeap>,
+	heap: Rc<RefCell<GcHeap>>,
 	interpreter: RefCell<Interpreter>,
 }
 
@@ -138,13 +150,15 @@ impl ClrInternal {
 		let mut lib_dir = exe_dir.clone();
 		lib_dir.push("libraries");
 
+		let heap = Rc::new(RefCell::new(GcHeap::new(1024 * 1024 * 10)));
 		Ok(ClrInternal {
 			assembly_load_paths: vec![exe_dir, lib_dir],
 			assemblies: vec![],
+			next_type_id: 1,
 			types: vec![],
 			type_map: HashMap::new(),
-			heap: RefCell::new(GcHeap::new()),
-			interpreter: RefCell::new(Interpreter::new()),
+			heap: heap.clone(),
+			interpreter: RefCell::new(Interpreter::new(heap)),
 		})
 	}
 
@@ -171,5 +185,11 @@ impl ClrInternal {
 	pub(crate) fn add_type(&mut self, t: Type) {
 		self.types.push(t.clone());
 		self.type_map.insert(t.full_name().to_string(), t);
+	}
+
+	pub(crate) fn next_type_id(&mut self) -> u32 {
+		let id = self.next_type_id;
+		self.next_type_id += 1;
+		id
 	}
 }

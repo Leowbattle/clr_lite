@@ -9,6 +9,7 @@ use num_traits::FromPrimitive;
 pub(super) struct StackFrame<'a> {
 	clr: ClrLite,
 	interpreter: &'a mut Interpreter,
+	gc: Rc<RefCell<GcHeap>>,
 	assembly: Assembly,
 	method: Method,
 	amount_allocated: usize,
@@ -24,9 +25,12 @@ impl<'a> StackFrame<'a> {
 			_ => unimplemented!(),
 		};
 
+		let gc = interpreter.gc.clone();
+
 		StackFrame {
 			clr,
 			interpreter,
+			gc,
 			assembly: method.declaring_type().unwrap().assembly().unwrap(),
 			method,
 			amount_allocated: 0,
@@ -150,35 +154,7 @@ impl<'a> StackFrame<'a> {
 				Opcodes::Call => {
 					let token = self.il_get::<MetadataToken>();
 
-					const METHOD_DEF: usize = TableType::MethodDef as usize;
-					const MEMBER_REF: usize = TableType::MemberRef as usize;
-					let method = match token.table() {
-						METHOD_DEF => self
-							.assembly
-							.resolve_method_def(token.index())
-							.ok_or_else(|| format!("Unable to find method for token {}", token))?,
-						MEMBER_REF => unimplemented!(
-							"Calling methods outside current assembly not yet supported"
-						),
-						_ => return Err(format!("Invalid metadata token {} for method", token)),
-					};
-
-					// Allocate space on the stack for parameters
-					let params = unsafe {
-						let param_count = method.parameters().len();
-						let data = self.stackalloc(param_count * size_of::<Value>());
-						slice::from_raw_parts_mut(data.as_ptr() as *mut Value, param_count)
-					};
-
-					// Pop parameters off the operand stack and into the parameters
-					for p in params.iter_mut().rev() {
-						*p = self.pop();
-					}
-
-					let ret = self.interpreter.execute(method, params)?;
-					if let Some(value) = ret {
-						self.push(value);
-					}
+					self.call_method(token)?;
 				}
 
 				Opcodes::Br_S => {
@@ -370,6 +346,21 @@ impl<'a> StackFrame<'a> {
 					self.push(a >> b);
 				}
 
+				Opcodes::Newobj => {
+					let ctor_token = self.il_get::<MetadataToken>();
+					let ctor = self.assembly.resolve_method(ctor_token).unwrap();
+					let t = ctor.declaring_type().unwrap();
+					let mut o = &mut *self.gc.borrow_mut().alloc(t) as *mut Object;
+
+					// In instance methods, this is arg0, so insert the object reference before the other arguments.
+					self.interpreter.operand_stack.insert(
+						self.interpreter.operand_stack.len() - ctor.parameters().len(),
+						Value::Object(o),
+					);
+					self.call_method(ctor_token)?;
+					self.push(Value::Object(o));
+				}
+
 				_ => {
 					return Err(format!(
 						"Use of unimplemented instruction {:?} at IL_{:04x}",
@@ -379,6 +370,35 @@ impl<'a> StackFrame<'a> {
 				}
 			}
 		}
+	}
+
+	fn call_method(&mut self, token: MetadataToken) -> Result<(), String> {
+		let method = self
+			.assembly
+			.resolve_method(token)
+			.ok_or_else(|| format!("Unable to find method for token {}", token))?;
+
+		// Allocate space on the stack for parameters
+		let params = unsafe {
+			let param_count = if method.is_static() {
+				method.parameters().len()
+			} else {
+				method.parameters().len() + 1
+			};
+			let data = self.stackalloc(param_count * size_of::<Value>());
+			slice::from_raw_parts_mut(data.as_ptr() as *mut Value, param_count)
+		};
+
+		// Pop parameters off the operand stack and into the parameters
+		for p in params.iter_mut().rev() {
+			*p = self.pop();
+		}
+
+		let ret = self.interpreter.execute(method, params)?;
+		if let Some(value) = ret {
+			self.push(value);
+		}
+		Ok(())
 	}
 
 	fn get_opcode(&mut self) -> Opcodes {

@@ -17,6 +17,11 @@ fn test_empty() {
 }
 
 #[test]
+fn test_non_static() {
+	assert!(matches!(run("NonStatic", &mut []), Err(_)));
+}
+
+#[test]
 fn test_fibonacci() {
 	assert_eq!(
 		run("Fibonacci", &mut [Value::I32(10)]),
@@ -296,4 +301,9 @@ fn test_logic_not() {
 		run("LogicNot", &mut [Value::I32(1)]),
 		Ok(Some(Value::I32(0)))
 	);
+}
+
+#[test]
+fn test_create_object() {
+	assert_eq!(run("CreateObject", &mut []), Ok(None));
 }

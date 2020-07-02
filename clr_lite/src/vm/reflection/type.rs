@@ -13,7 +13,7 @@ pub struct Type(pub(crate) Rc<TypeInternal>);
 
 impl Type {
 	pub(crate) fn load<'a>(
-		clr: ClrLite,
+		mut clr: ClrLite,
 		assembly: Assembly,
 		i: usize,
 		metadata: &'a Metadata<'a>,
@@ -32,6 +32,7 @@ impl Type {
 		let t = Type(Rc::new(TypeInternal {
 			clr: Rc::downgrade(&clr.0),
 			assembly: Rc::downgrade(&assembly.0),
+			id: clr.next_type_id(),
 			name,
 			namespace,
 			full_name,
@@ -266,7 +267,7 @@ impl Type {
 		})
 	}
 
-	fn get_or_create_array_type(clr: ClrLite, element: Type) -> Type {
+	fn get_or_create_array_type(mut clr: ClrLite, element: Type) -> Type {
 		// TODO Make all reference types use the same array type
 		let full_name = format!("{}[]", element.full_name());
 		if let Some(t) = clr.get_type(&full_name) {
@@ -276,6 +277,7 @@ impl Type {
 		let t = Type(Rc::new(TypeInternal {
 			clr: Rc::downgrade(&clr.0),
 			assembly: element.0.assembly.clone(),
+			id: clr.next_type_id(),
 			name: format!("{}[]", element.name()),
 			namespace: element.namespace().to_string(),
 			full_name,
@@ -293,6 +295,11 @@ impl Type {
 		clr.0.borrow_mut().add_type(t.clone());
 
 		t
+	}
+
+	/// A unique number identifying this type from any other type loaded in any assembly.
+	pub fn id(&self) -> u32 {
+		self.0.id
 	}
 
 	pub fn name<'a>(&'a self) -> &'a str {
@@ -437,7 +444,7 @@ impl Type {
 
 impl PartialEq for Type {
 	fn eq(&self, other: &Type) -> bool {
-		self.full_name() == other.full_name()
+		self.id() == other.id()
 	}
 }
 
@@ -514,6 +521,7 @@ impl fmt::Display for TypeKind {
 pub(crate) struct TypeInternal {
 	clr: Weak<RefCell<ClrInternal>>,
 	assembly: Weak<AssemblyInternal>,
+	id: u32,
 	name: String,
 	namespace: String,
 	full_name: String,
