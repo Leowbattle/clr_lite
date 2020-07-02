@@ -361,6 +361,29 @@ impl<'a> StackFrame<'a> {
 					self.push(Value::Object(o));
 				}
 
+				Opcodes::Stfld => {
+					let field_token = self.il_get::<MetadataToken>();
+					let field = self.assembly.resolve_field(field_token).unwrap();
+					let value = self.pop();
+					let raw = match self.pop() {
+						Value::Object(o) => unsafe { &mut (*o).raw },
+						Value::ValueType(o) => unsafe { &mut *o },
+						value => return Err(format!("Cannot store field in {:?}", value)),
+					};
+					raw.set_field(field, value);
+				}
+
+				Opcodes::Ldfld => {
+					let field_token = self.il_get::<MetadataToken>();
+					let field = self.assembly.resolve_field(field_token).unwrap();
+					let raw = match self.pop() {
+						Value::Object(o) => unsafe { &mut (*o).raw },
+						Value::ValueType(o) => unsafe { &mut *o },
+						value => return Err(format!("Cannot store field in {:?}", value)),
+					};
+					self.push(raw.get_field(field));
+				}
+
 				_ => {
 					return Err(format!(
 						"Use of unimplemented instruction {:?} at IL_{:04x}",

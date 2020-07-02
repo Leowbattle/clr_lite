@@ -20,6 +20,6 @@ pub(crate) struct ObjectHeader {
 }
 
 pub struct Object {
-	header: ObjectHeader,
-	raw: RawObject,
+	pub(crate) header: ObjectHeader,
+	pub(crate) raw: RawObject,
 }

@@ -836,6 +836,22 @@ namespace InterpreterTests
 		{
 			object o = new object();
 		}
+
+		class CustomObject
+		{
+			public int x;
+
+			public CustomObject(int x)
+			{
+				this.x = x + 1;
+			}
+		}
+
+		static int CreateCustomObject(int x)
+		{
+			CustomObject co = new CustomObject(x);
+			return co.x;
+		}
 		#endregion
 	}
 }

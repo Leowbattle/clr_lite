@@ -147,13 +147,17 @@ impl Type {
 		} else {
 			0
 		};
+
+		let mut assembly = self.assembly().unwrap();
 		for i in field_start..field_end {
 			let f = {
 				let mut fields = self.0.fields.borrow_mut();
 				let mut field_map = self.0.field_map.borrow_mut();
+				let mut assembly_fields = assembly.0.fields.borrow_mut();
 				let f = Field::load(clr.clone(), self.clone(), i, offset, metadata)?;
 				fields.push(f.clone());
 				field_map.insert(f.name().to_string(), f.clone());
+				assembly_fields.push(f.clone());
 				f
 			};
 			offset += f.field_type().unwrap().size();
@@ -295,6 +299,10 @@ impl Type {
 		clr.0.borrow_mut().add_type(t.clone());
 
 		t
+	}
+
+	pub(crate) fn clr(&self) -> ClrLite {
+		ClrLite(self.0.clr.upgrade().unwrap())
 	}
 
 	/// A unique number identifying this type from any other type loaded in any assembly.

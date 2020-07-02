@@ -85,6 +85,21 @@ impl ClrLite {
 			"System.Console"
 		}
 
+		// Load primitive types
+		let primitives = PrimitiveTypes {
+			sbyte: self.get_type("System.SByte").unwrap(),
+			byte: self.get_type("System.Byte").unwrap(),
+			short: self.get_type("System.Int16").unwrap(),
+			ushort: self.get_type("System.UInt16").unwrap(),
+			int: self.get_type("System.Int32").unwrap(),
+			uint: self.get_type("System.UInt32").unwrap(),
+			long: self.get_type("System.Int64").unwrap(),
+			ulong: self.get_type("System.UInt64").unwrap(),
+			float: self.get_type("System.Single").unwrap(),
+			double: self.get_type("System.Double").unwrap(),
+		};
+		self.0.borrow_mut().primitive_types.replace(primitives);
+
 		Ok(())
 	}
 
@@ -105,6 +120,10 @@ impl ClrLite {
 
 	pub(crate) fn next_type_id(&mut self) -> u32 {
 		self.0.borrow_mut().next_type_id()
+	}
+
+	pub(crate) fn internal<'a>(&'a self) -> Ref<'a, ClrInternal> {
+		self.0.borrow()
 	}
 }
 
@@ -140,6 +159,21 @@ pub(crate) struct ClrInternal {
 	type_map: HashMap<String, Type>,
 	heap: Rc<RefCell<GcHeap>>,
 	interpreter: RefCell<Interpreter>,
+
+	primitive_types: Option<PrimitiveTypes>,
+}
+
+pub(crate) struct PrimitiveTypes {
+	pub sbyte: Type,
+	pub byte: Type,
+	pub short: Type,
+	pub ushort: Type,
+	pub int: Type,
+	pub uint: Type,
+	pub long: Type,
+	pub ulong: Type,
+	pub float: Type,
+	pub double: Type,
 }
 
 impl ClrInternal {
@@ -159,6 +193,7 @@ impl ClrInternal {
 			type_map: HashMap::new(),
 			heap: heap.clone(),
 			interpreter: RefCell::new(Interpreter::new(heap)),
+			primitive_types: None,
 		})
 	}
 
@@ -191,5 +226,9 @@ impl ClrInternal {
 		let id = self.next_type_id;
 		self.next_type_id += 1;
 		id
+	}
+
+	pub(crate) fn primitives<'a>(&'a self) -> &'a PrimitiveTypes {
+		self.primitive_types.as_ref().unwrap()
 	}
 }

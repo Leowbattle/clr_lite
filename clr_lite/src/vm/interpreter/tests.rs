@@ -307,3 +307,11 @@ fn test_logic_not() {
 fn test_create_object() {
 	assert_eq!(run("CreateObject", &mut []), Ok(None));
 }
+
+#[test]
+fn test_create_custom_object() {
+	assert_eq!(
+		run("CreateCustomObject", &mut [Value::I32(2)]),
+		Ok(Some(Value::I32(3)))
+	);
+}

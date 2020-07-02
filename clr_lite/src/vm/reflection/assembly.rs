@@ -78,6 +78,7 @@ impl Assembly {
 
 			method_defs: RefCell::new(vec![]),
 			method_refs: method_refs,
+			fields: RefCell::new(vec![]),
 		}));
 
 		// Load type names
@@ -187,6 +188,14 @@ impl Assembly {
 			_ => None,
 		}
 	}
+
+	pub fn resolve_field(&self, token: MetadataToken) -> Option<Field> {
+		if token.table() == TableType::Field as usize {
+			Some(self.0.fields.borrow().get(token.index() - 1)?.clone())
+		} else {
+			None
+		}
+	}
 }
 
 pub struct Types<'a> {
@@ -209,4 +218,5 @@ pub(crate) struct AssemblyInternal {
 
 	method_defs: RefCell<Vec<Method>>,
 	method_refs: Vec<Method>,
+	pub(crate) fields: RefCell<Vec<Field>>,
 }
