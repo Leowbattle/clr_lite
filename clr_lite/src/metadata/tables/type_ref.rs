@@ -39,7 +39,6 @@ impl TableRow for TypeRef {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	
 
 	#[test]
 	fn test_type_ref() {

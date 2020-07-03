@@ -853,6 +853,24 @@ namespace InterpreterTests
 			return co.x;
 		}
 		#endregion
+
+		#region Arrays
+		static int CreateArray(int length)
+		{
+			int[] arr = new int[length];
+			return arr.Length;
+		}
+
+		static int ArrayIndexing(int length, int i)
+		{
+			int[] arr = new int[length];
+			for (int j = 0; j < arr.Length; j++)
+			{
+				arr[j] = j;
+			}
+			return arr[i];
+		}
+		#endregion
 	}
 }
 

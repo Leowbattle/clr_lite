@@ -38,6 +38,22 @@ impl Value {
 			_ => unimplemented!("Cannot check if {:?} is null or zero", self),
 		}
 	}
+
+	pub fn as_i32(self) -> Value {
+		match self {
+			Value::I8(x) => Value::I32(x as i32),
+			Value::U8(x) => Value::I32(x as i32),
+			Value::I16(x) => Value::I32(x as i32),
+			Value::U16(x) => Value::I32(x as i32),
+			Value::I32(x) => Value::I32(x as i32),
+			Value::U32(x) => Value::I32(x as i32),
+			Value::I64(x) => Value::I32(x as i32),
+			Value::U64(x) => Value::I32(x as i32),
+			Value::F32(x) => Value::I32(x as i32),
+			Value::F64(x) => Value::I32(x as i32),
+			_ => unimplemented!("Cannot convert {:?} to i32", self),
+		}
+	}
 }
 
 impl PartialOrd for Value {

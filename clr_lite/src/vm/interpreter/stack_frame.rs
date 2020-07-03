@@ -1,6 +1,7 @@
 use crate::metadata::{tables::TableType, MetadataToken};
 use crate::vm::interpreter::*;
 
+use std::convert::TryInto;
 use std::mem::size_of;
 use std::slice;
 
@@ -350,7 +351,7 @@ impl<'a> StackFrame<'a> {
 					let ctor_token = self.il_get::<MetadataToken>();
 					let ctor = self.assembly.resolve_method(ctor_token).unwrap();
 					let t = ctor.declaring_type().unwrap();
-					let mut o = &mut *self.gc.borrow_mut().alloc(t) as *mut Object;
+					let o = &mut *self.gc.borrow_mut().alloc(t) as *mut Object;
 
 					// In instance methods, this is arg0, so insert the object reference before the other arguments.
 					self.interpreter.operand_stack.insert(
@@ -382,6 +383,51 @@ impl<'a> StackFrame<'a> {
 						value => return Err(format!("Cannot store field in {:?}", value)),
 					};
 					self.push(raw.get_field(field));
+				}
+
+				Opcodes::Newarr => {
+					let type_token = self.il_get::<MetadataToken>();
+					let element_type = self.assembly.resolve_type(type_token).unwrap();
+					let length = match self.pop() {
+						Value::I32(x) => x as usize,
+						value => return Err(format!("Invalid array length {:?}", value)),
+					};
+					let arr =
+						&mut *self.gc.borrow_mut().alloc_array(element_type, length) as *mut Object;
+					self.push(Value::Object(arr));
+				}
+
+				Opcodes::Ldlen => {
+					let arr = self.pop_array().ok_or_else(|| {
+						"Cannot find length of object that is not array".to_string()
+					})?;
+					self.push(Value::I32(arr.length() as i32));
+				}
+
+				// TODO Instead of Rust bounds checking, check it myself then throw
+				// IndexOutOfRangeException or access through a pointer.
+				Opcodes::Stelem_I4 => {
+					let value = self.pop_i32().unwrap();
+					let index = self.pop_i32().unwrap() as usize;
+					let arr = self.pop_array().ok_or_else(|| {
+						"Cannot find length of object that is not array".to_string()
+					})?;
+					let arr: &mut [i32] = arr.try_into()?;
+					arr[index] = value;
+				}
+
+				Opcodes::Ldelem_I4 => {
+					let index = self.pop_i32().unwrap() as usize;
+					let arr = self.pop_array().ok_or_else(|| {
+						"Cannot find length of object that is not array".to_string()
+					})?;
+					let arr: &mut [i32] = arr.try_into()?;
+					self.push(Value::I32(arr[index]));
+				}
+
+				Opcodes::Conv_I4 => {
+					let value = self.pop();
+					self.push(value.as_i32());
 				}
 
 				_ => {
@@ -449,6 +495,20 @@ impl<'a> StackFrame<'a> {
 
 	fn pop(&mut self) -> Value {
 		self.try_pop().unwrap()
+	}
+
+	fn pop_i32(&mut self) -> Option<i32> {
+		match self.pop() {
+			Value::I32(x) => Some(x),
+			_ => None,
+		}
+	}
+
+	fn pop_array(&mut self) -> Option<&'a mut Array> {
+		match self.pop() {
+			Value::Object(o) => unsafe { (&mut *o).as_array() },
+			value => None,
+		}
 	}
 
 	fn try_pop(&mut self) -> Option<Value> {

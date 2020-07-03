@@ -70,6 +70,24 @@ impl Assembly {
 			}
 		}
 
+		// Get types references by this assembly
+		let mut type_refs = Vec::with_capacity(metadata.tables().type_ref.rows().len());
+		for tr in metadata.tables().type_ref.rows() {
+			let type_name = metadata.strings().get(tr.name).unwrap().to_string();
+			let type_namespace = metadata.strings().get(tr.namespace).unwrap().to_string();
+
+			let type_full_name = if type_namespace.is_empty() {
+				type_name.to_string()
+			} else {
+				format!("{}.{}", type_namespace, type_name)
+			};
+
+			let t = clr.get_type(&type_full_name).ok_or_else(|| {
+				format!("Cannot find type {} referenced by {}", type_full_name, name)
+			})?;
+			type_refs.push(t);
+		}
+
 		let a = Assembly(Rc::new(AssemblyInternal {
 			clr: Rc::downgrade(&clr.0),
 			name,
@@ -79,6 +97,7 @@ impl Assembly {
 			method_defs: RefCell::new(vec![]),
 			method_refs: method_refs,
 			fields: RefCell::new(vec![]),
+			type_refs,
 		}));
 
 		// Load type names
@@ -196,6 +215,16 @@ impl Assembly {
 			None
 		}
 	}
+
+	pub fn resolve_type(&self, token: MetadataToken) -> Option<Type> {
+		const TYPE_DEF: usize = TableType::TypeDef as usize;
+		const TYPE_REF: usize = TableType::TypeRef as usize;
+		match token.table() {
+			TYPE_DEF => Some(self.0.types.borrow().get(token.index() - 1)?.clone()),
+			TYPE_REF => Some(self.0.type_refs.get(token.index() - 1)?.clone()),
+			_ => None,
+		}
+	}
 }
 
 pub struct Types<'a> {
@@ -219,4 +248,5 @@ pub(crate) struct AssemblyInternal {
 	method_defs: RefCell<Vec<Method>>,
 	method_refs: Vec<Method>,
 	pub(crate) fields: RefCell<Vec<Field>>,
+	type_refs: Vec<Type>,
 }

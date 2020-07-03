@@ -301,6 +301,10 @@ impl Type {
 		t
 	}
 
+	pub fn get_array_type(&self) -> Type {
+		Type::get_or_create_array_type(self.clr(), self.clone())
+	}
+
 	pub(crate) fn clr(&self) -> ClrLite {
 		ClrLite(self.0.clr.upgrade().unwrap())
 	}

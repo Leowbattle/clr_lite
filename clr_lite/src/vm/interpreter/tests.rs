@@ -315,3 +315,19 @@ fn test_create_custom_object() {
 		Ok(Some(Value::I32(3)))
 	);
 }
+
+#[test]
+fn test_create_array() {
+	assert_eq!(
+		run("CreateArray", &mut [Value::I32(10)]),
+		Ok(Some(Value::I32(10)))
+	);
+}
+
+#[test]
+fn test_array_indexing() {
+	assert_eq!(
+		run("ArrayIndexing", &mut [Value::I32(10), Value::I32(3)]),
+		Ok(Some(Value::I32(3)))
+	);
+}

@@ -6,5 +6,6 @@ const DATA: &'static [u8] =
 fn main() {
 	let mut clr = ClrLite::new_runtime().unwrap();
 	let a = clr.load_assembly_from_data(DATA).unwrap();
-	dbg!(clr.execute(a.entry_point().unwrap(), &mut []));
+	let tests = clr.get_type("InterpreterTests.Tests").unwrap();
+	dbg!(clr.execute(tests.get_method("CreateArray").unwrap(), &mut []));
 }
