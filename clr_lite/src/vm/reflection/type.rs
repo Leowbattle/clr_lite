@@ -13,7 +13,7 @@ pub struct Type(pub(crate) Rc<TypeInternal>);
 
 impl Type {
 	pub(crate) fn load<'a>(
-		clr: ClrLite,
+		mut clr: ClrLite,
 		assembly: Assembly,
 		i: usize,
 		metadata: &'a Metadata<'a>,
@@ -32,6 +32,7 @@ impl Type {
 		let t = Type(Rc::new(TypeInternal {
 			clr: Rc::downgrade(&clr.0),
 			assembly: Rc::downgrade(&assembly.0),
+			id: clr.next_type_id(),
 			name,
 			namespace,
 			full_name,
@@ -146,13 +147,17 @@ impl Type {
 		} else {
 			0
 		};
+
+		let mut assembly = self.assembly().unwrap();
 		for i in field_start..field_end {
 			let f = {
 				let mut fields = self.0.fields.borrow_mut();
 				let mut field_map = self.0.field_map.borrow_mut();
+				let mut assembly_fields = assembly.0.fields.borrow_mut();
 				let f = Field::load(clr.clone(), self.clone(), i, offset, metadata)?;
 				fields.push(f.clone());
 				field_map.insert(f.name().to_string(), f.clone());
+				assembly_fields.push(f.clone());
 				f
 			};
 			offset += f.field_type().unwrap().size();
@@ -266,7 +271,7 @@ impl Type {
 		})
 	}
 
-	fn get_or_create_array_type(clr: ClrLite, element: Type) -> Type {
+	fn get_or_create_array_type(mut clr: ClrLite, element: Type) -> Type {
 		// TODO Make all reference types use the same array type
 		let full_name = format!("{}[]", element.full_name());
 		if let Some(t) = clr.get_type(&full_name) {
@@ -276,6 +281,7 @@ impl Type {
 		let t = Type(Rc::new(TypeInternal {
 			clr: Rc::downgrade(&clr.0),
 			assembly: element.0.assembly.clone(),
+			id: clr.next_type_id(),
 			name: format!("{}[]", element.name()),
 			namespace: element.namespace().to_string(),
 			full_name,
@@ -293,6 +299,10 @@ impl Type {
 		clr.0.borrow_mut().add_type(t.clone());
 
 		t
+	}
+
+	pub fn id(&self) -> u32 {
+		self.0.id
 	}
 
 	pub fn name<'a>(&'a self) -> &'a str {
@@ -514,6 +524,7 @@ impl fmt::Display for TypeKind {
 pub(crate) struct TypeInternal {
 	clr: Weak<RefCell<ClrInternal>>,
 	assembly: Weak<AssemblyInternal>,
+	id: u32,
 	name: String,
 	namespace: String,
 	full_name: String,

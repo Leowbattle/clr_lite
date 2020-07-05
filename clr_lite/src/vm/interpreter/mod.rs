@@ -1,3 +1,4 @@
+use crate::vm::gc::*;
 use crate::vm::*;
 
 use std::cell::RefCell;
@@ -15,38 +16,32 @@ pub use opcodes::*;
 pub type RunResult = Result<Option<Value>, String>;
 
 pub(crate) struct Interpreter {
-	pub clr: Option<Weak<RefCell<ClrInternal>>>,
+	pub clr: ClrLite,
+	pub gc: GcHeap,
 	pub stackalloc: Vec<u8>,
 	pub operand_stack: Vec<Value>,
 }
 
 impl Interpreter {
-	pub(crate) fn new() -> Interpreter {
+	pub(crate) fn new(clr: ClrLite) -> Interpreter {
 		Interpreter {
-			clr: None,
+			clr,
+			gc: GcHeap::new(1024 * 1024),
 			stackalloc: Vec::with_capacity(1024 * 1024),
 			operand_stack: Vec::with_capacity(128 * 1024),
 		}
 	}
 
 	pub fn execute(&mut self, m: Method, params: &mut [Value]) -> RunResult {
-		// Validate parameters
-		if m.parameters().len() != params.len() {
-			return Err(format!(
-				"Invalid parameter count {} for {}",
-				params.len(),
-				m,
-			));
-		}
-		for (_p1, _p2) in m.parameters().iter().zip(params.iter()) {
-			// TODO Check
-		}
-
 		StackFrame::new(self.clr(), self, m).execute(params)
 	}
 
 	fn clr(&self) -> ClrLite {
-		ClrLite(self.clr.as_ref().unwrap().upgrade().unwrap())
+		self.clr.clone()
+	}
+
+	fn gc<'a>(&'a mut self) -> &'a mut GcHeap {
+		&mut self.gc
 	}
 }
 

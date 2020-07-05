@@ -150,35 +150,7 @@ impl<'a> StackFrame<'a> {
 				Opcodes::Call => {
 					let token = self.il_get::<MetadataToken>();
 
-					const METHOD_DEF: usize = TableType::MethodDef as usize;
-					const MEMBER_REF: usize = TableType::MemberRef as usize;
-					let method = match token.table() {
-						METHOD_DEF => self
-							.assembly
-							.resolve_method_def(token.index())
-							.ok_or_else(|| format!("Unable to find method for token {}", token))?,
-						MEMBER_REF => unimplemented!(
-							"Calling methods outside current assembly not yet supported"
-						),
-						_ => return Err(format!("Invalid metadata token {} for method", token)),
-					};
-
-					// Allocate space on the stack for parameters
-					let params = unsafe {
-						let param_count = method.parameters().len();
-						let data = self.stackalloc(param_count * size_of::<Value>());
-						slice::from_raw_parts_mut(data.as_ptr() as *mut Value, param_count)
-					};
-
-					// Pop parameters off the operand stack and into the parameters
-					for p in params.iter_mut().rev() {
-						*p = self.pop();
-					}
-
-					let ret = self.interpreter.execute(method, params)?;
-					if let Some(value) = ret {
-						self.push(value);
-					}
+					self.method_call(token)?;
 				}
 
 				Opcodes::Br_S => {
@@ -370,6 +342,37 @@ impl<'a> StackFrame<'a> {
 					self.push(a >> b);
 				}
 
+				Opcodes::Newobj => {
+					let ctor_token = self.il_get::<MetadataToken>();
+					let ctor = self.assembly.resolve_method(ctor_token).unwrap();
+					let t = ctor.declaring_type().unwrap();
+					let o = self.gc().alloc(t);
+					// In instance methods, `this` is arg0, so insert the object reference before the other arguments.
+					self.interpreter.operand_stack.insert(
+						self.interpreter.operand_stack.len() - ctor.parameters().len(),
+						Value::Object(o),
+					);
+					self.method_call(ctor_token)?;
+					self.push(Value::Object(o));
+				}
+				Opcodes::Stfld => {
+					let field_token = self.il_get::<MetadataToken>();
+					let field = self.assembly.resolve_field(field_token).unwrap();
+					let value = self.pop();
+					match self.pop() {
+						Value::Object(mut o) => o.set(field, value),
+						o => return Err(format!("Cannot store field in {:?}", o)),
+					}
+				}
+				Opcodes::Ldfld => {
+					let field_token = self.il_get::<MetadataToken>();
+					let field = self.assembly.resolve_field(field_token).unwrap();
+					match self.pop() {
+						Value::Object(mut o) => self.push(o.get(field, &self.clr)),
+						value => return Err(format!("Cannot load field from {:?}", value)),
+					};
+				}
+
 				_ => {
 					return Err(format!(
 						"Use of unimplemented instruction {:?} at IL_{:04x}",
@@ -379,6 +382,39 @@ impl<'a> StackFrame<'a> {
 				}
 			}
 		}
+	}
+
+	fn method_call(&mut self, token: MetadataToken) -> Result<(), String> {
+		let method = self.assembly.resolve_method(token).ok_or_else(|| {
+			format!(
+				"Cannot find method for metadata token {} in {}",
+				token,
+				self.assembly.name()
+			)
+		})?;
+
+		// Allocate space on the stack for parameters
+		let params = unsafe {
+			let param_count = if method.is_static() {
+				method.parameters().len()
+			} else {
+				method.parameters().len() + 1
+			};
+			let data = self.stackalloc(param_count * size_of::<Value>());
+			slice::from_raw_parts_mut(data.as_ptr() as *mut Value, param_count)
+		};
+
+		// Pop parameters off the operand stack and into the parameters
+		for p in params.iter_mut().rev() {
+			*p = self.pop();
+		}
+
+		let ret = self.interpreter.execute(method, params)?;
+		if let Some(value) = ret {
+			self.push(value);
+		}
+
+		Ok(())
 	}
 
 	fn get_opcode(&mut self) -> Opcodes {
@@ -426,6 +462,10 @@ impl<'a> StackFrame<'a> {
 		let data = &mut self.interpreter.stackalloc[base..base + size];
 		self.amount_allocated += size;
 		data
+	}
+
+	fn gc<'b>(&'b mut self) -> &'b mut GcHeap {
+		self.interpreter.gc()
 	}
 }
 

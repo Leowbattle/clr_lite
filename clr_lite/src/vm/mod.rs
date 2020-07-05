@@ -22,8 +22,6 @@ impl ClrLite {
 	pub fn new_runtime() -> Result<ClrLite, String> {
 		let mut clr = ClrLite(Rc::new(RefCell::new(ClrInternal::new_runtime()?)));
 		clr.load_builtin_assemblies()?;
-		clr.0.borrow().heap.borrow_mut().clr = Some(Rc::downgrade(&clr.0));
-		clr.0.borrow().interpreter.borrow_mut().clr = Some(Rc::downgrade(&clr.0));
 		Ok(clr)
 	}
 
@@ -85,6 +83,21 @@ impl ClrLite {
 			"System.Console"
 		}
 
+		// Load primitive types
+		let primitives = PrimitiveTypes {
+			sbyte: self.get_type("System.SByte").unwrap(),
+			byte: self.get_type("System.Byte").unwrap(),
+			short: self.get_type("System.Int16").unwrap(),
+			ushort: self.get_type("System.UInt16").unwrap(),
+			int: self.get_type("System.Int32").unwrap(),
+			uint: self.get_type("System.UInt32").unwrap(),
+			long: self.get_type("System.Int64").unwrap(),
+			ulong: self.get_type("System.UInt64").unwrap(),
+			float: self.get_type("System.Single").unwrap(),
+			double: self.get_type("System.Double").unwrap(),
+		};
+		self.0.borrow_mut().primitive_types.replace(primitives);
+
 		Ok(())
 	}
 
@@ -93,7 +106,25 @@ impl ClrLite {
 	}
 
 	pub fn execute(&mut self, m: Method, params: &mut [Value]) -> RunResult {
-		self.0.borrow().interpreter.borrow_mut().execute(m, params)
+		if !m.is_static() {
+			return Err(format!(
+				"Cannot use non-static method {}.{} as entry point",
+				m.declaring_type().unwrap(),
+				m.name()
+			));
+		}
+		Interpreter::new(self.clone()).execute(m, params)
+	}
+
+	pub(crate) fn next_type_id(&mut self) -> u32 {
+		let mut internal = self.0.borrow_mut();
+		let id = internal.next_type_id;
+		internal.next_type_id += 1;
+		id
+	}
+
+	pub(crate) fn internal<'a>(&'a self) -> Ref<'a, ClrInternal> {
+		self.0.borrow()
 	}
 }
 
@@ -126,8 +157,22 @@ pub(crate) struct ClrInternal {
 	assemblies: Vec<Assembly>,
 	types: Vec<Type>,
 	type_map: HashMap<String, Type>,
-	heap: RefCell<GcHeap>,
-	interpreter: RefCell<Interpreter>,
+
+	next_type_id: u32,
+	primitive_types: Option<PrimitiveTypes>,
+}
+
+pub(crate) struct PrimitiveTypes {
+	pub sbyte: Type,
+	pub byte: Type,
+	pub short: Type,
+	pub ushort: Type,
+	pub int: Type,
+	pub uint: Type,
+	pub long: Type,
+	pub ulong: Type,
+	pub float: Type,
+	pub double: Type,
 }
 
 impl ClrInternal {
@@ -143,8 +188,9 @@ impl ClrInternal {
 			assemblies: vec![],
 			types: vec![],
 			type_map: HashMap::new(),
-			heap: RefCell::new(GcHeap::new()),
-			interpreter: RefCell::new(Interpreter::new()),
+
+			next_type_id: 0,
+			primitive_types: None,
 		})
 	}
 
@@ -171,5 +217,9 @@ impl ClrInternal {
 	pub(crate) fn add_type(&mut self, t: Type) {
 		self.types.push(t.clone());
 		self.type_map.insert(t.full_name().to_string(), t);
+	}
+
+	pub(crate) fn primitives<'a>(&'a self) -> &'a PrimitiveTypes {
+		self.primitive_types.as_ref().unwrap()
 	}
 }

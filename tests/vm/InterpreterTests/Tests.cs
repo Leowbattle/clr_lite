@@ -12,6 +12,8 @@ namespace InterpreterTests
 	{
 		static void Empty() { }
 
+		void NonStatic() { }
+
 		static int Fibonacci(int n)
 		{
 			if (n < 2)
@@ -594,7 +596,7 @@ namespace InterpreterTests
 		#endregion
 
 		#region Jump and comparisons
-		int Goto()
+		static int Goto()
 		{
 			goto l2;
 			l1:
@@ -604,7 +606,7 @@ namespace InterpreterTests
 			return 0;
 		}
 
-		int Br()
+		static int Br()
 		{
 			goto l2;
 			l1:
@@ -825,6 +827,29 @@ namespace InterpreterTests
 		static bool LogicNot(bool b)
 		{
 			return !b;
+		}
+		#endregion
+
+		#region Objects
+		static void CreateObject()
+		{
+			object o = new object();
+		}
+
+		class CustomObject
+		{
+			public int x;
+
+			public CustomObject(int x)
+			{
+				this.x = x + 1;
+			}
+		}
+
+		static int CreateCustomObject(int x)
+		{
+			var o = new CustomObject(x);
+			return o.x;
 		}
 		#endregion
 	}

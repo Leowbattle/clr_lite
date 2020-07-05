@@ -15,7 +15,7 @@ pub enum Value {
 	U64(u64),
 	F32(f32),
 	F64(f64),
-	ValueType(RawObject),
+	Object(Object),
 }
 
 impl Value {
