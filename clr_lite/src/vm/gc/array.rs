@@ -55,7 +55,7 @@ impl Array {
 		}
 
 		let internal = clr.internal();
-		let p = internal.primitives();
+		let _p = internal.primitives();
 
 		unsafe {
 			match value {

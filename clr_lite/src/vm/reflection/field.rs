@@ -68,6 +68,7 @@ impl fmt::Display for Field {
 }
 
 pub(crate) struct FieldInternal {
+	#[allow(dead_code)]
 	clr: Weak<RefCell<ClrInternal>>,
 	name: String,
 	field_type: Weak<TypeInternal>,

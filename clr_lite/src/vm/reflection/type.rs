@@ -148,7 +148,7 @@ impl Type {
 			0
 		};
 
-		let mut assembly = self.assembly().unwrap();
+		let assembly = self.assembly().unwrap();
 		for i in field_start..field_end {
 			let f = {
 				let mut fields = self.0.fields.borrow_mut();

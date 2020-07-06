@@ -1,4 +1,4 @@
-use crate::metadata::{tables::TableType, MetadataToken};
+use crate::metadata::MetadataToken;
 use crate::vm::interpreter::*;
 
 use std::mem::size_of;
@@ -35,7 +35,7 @@ impl<'a> StackFrame<'a> {
 		}
 	}
 
-	pub fn execute(&mut self, params: &mut [Value]) -> RunResult {
+	pub fn execute(&mut self, params: &mut [Value]) -> Result<Option<Value>, String> {
 		let body = match self.method.implementation() {
 			MethodImplementation::IL(b) => b,
 			_ => unreachable!(),
@@ -411,6 +411,19 @@ impl<'a> StackFrame<'a> {
 					self.push(Value::I32(arr[index]));
 				}
 
+				Opcodes::Ldstr => {
+					let str_token = self.il_get::<MetadataToken>();
+
+					// TODO Don't use to_vec for this.
+					let str_data = self
+						.assembly
+						.get_string(str_token)
+						.ok_or_else(|| format!("Cannot find string for token {}", str_token))?
+						.to_vec();
+					let s = self.gc().alloc_string(&str_data);
+					self.push(Value::Object(s.as_object()));
+				}
+
 				_ => {
 					return Err(format!(
 						"Use of unimplemented instruction {:?} at IL_{:04x}",
@@ -436,6 +449,7 @@ impl<'a> StackFrame<'a> {
 			let param_count = if method.is_static() {
 				method.parameters().len()
 			} else {
+				// Instance methods have an implicit `this` pointer as argument 0.
 				method.parameters().len() + 1
 			};
 			let data = self.stackalloc(param_count * size_of::<Value>());
@@ -524,7 +538,7 @@ impl<'a> StackFrame<'a> {
 		data
 	}
 
-	fn gc<'b>(&'b mut self) -> &'b mut GcHeap {
+	fn gc<'b>(&'b mut self) -> RefMut<'b, GcHeap> {
 		self.interpreter.gc()
 	}
 }

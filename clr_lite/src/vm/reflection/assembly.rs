@@ -1,3 +1,4 @@
+use crate::metadata::blob::BlobReader;
 use crate::metadata::tables::{MemberRefParentHandle, TableType, TypeDefOrRefHandle};
 use crate::metadata::*;
 use crate::vm::*;
@@ -93,6 +94,8 @@ impl Assembly {
 			name,
 			types: RefCell::new(vec![]),
 			entry_point: RefCell::new(None),
+
+			user_string_data: metadata.user_string_data().to_vec().into_boxed_slice(),
 
 			method_defs: RefCell::new(vec![]),
 			method_refs: method_refs,
@@ -225,6 +228,17 @@ impl Assembly {
 			_ => None,
 		}
 	}
+
+	pub fn get_string<'a>(&'a self, token: MetadataToken) -> Option<&'a [u16]> {
+		if token.table() == 0x70 {
+			BlobReader::new(&self.0.user_string_data[token.index()..])
+				.ok()?
+				.read_utf16_str()
+				.ok()
+		} else {
+			None
+		}
+	}
 }
 
 pub struct Types<'a> {
@@ -240,10 +254,13 @@ impl<'a> Deref for Types<'a> {
 }
 
 pub(crate) struct AssemblyInternal {
+	#[allow(dead_code)]
 	clr: Weak<RefCell<ClrInternal>>,
 	name: String,
 	types: RefCell<Vec<Type>>,
 	entry_point: RefCell<Option<Method>>,
+
+	user_string_data: Box<[u8]>,
 
 	method_defs: RefCell<Vec<Method>>,
 	method_refs: Vec<Method>,

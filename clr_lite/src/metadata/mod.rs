@@ -1,9 +1,6 @@
 pub mod strings_heap;
 pub use strings_heap::*;
 
-pub mod user_strings_heap;
-pub use user_strings_heap::*;
-
 pub mod blob_heap;
 pub use blob_heap::*;
 
@@ -38,11 +35,15 @@ pub struct Metadata<'data> {
 	pe_info: PeInfo<'data>,
 
 	cli_header: CliHeader,
+
+	#[allow(dead_code)]
 	metadata: &'data [u8],
 
 	strings_heap: StringsHeap<'data>,
-	user_strings_heap: UserStringsHeap<'data>,
+	user_string_data: &'data [u8],
 	blob_heap: BlobHeap<'data>,
+
+	#[allow(dead_code)]
 	guid_heap: GuidHeap<'data>,
 	tables: Tables,
 
@@ -185,13 +186,11 @@ impl<'data> Metadata<'data> {
 				[strings_heap.offset as usize..(strings_heap.offset + strings_heap.size) as usize],
 		);
 
-		let user_strings_heap = if let Some(user_strings_heap) = user_strings_heap {
-			UserStringsHeap::new(
-				&metadata[user_strings_heap.offset as usize
-					..(user_strings_heap.offset + user_strings_heap.size) as usize],
-			)
+		let user_string_data = if let Some(user_strings_heap) = user_strings_heap {
+			&metadata[user_strings_heap.offset as usize
+				..(user_strings_heap.offset + user_strings_heap.size) as usize]
 		} else {
-			UserStringsHeap::new(&metadata[0..0])
+			&[]
 		};
 
 		let blob_heap = blob_heap.unwrap();
@@ -218,7 +217,7 @@ impl<'data> Metadata<'data> {
 			metadata,
 
 			strings_heap,
-			user_strings_heap,
+			user_string_data,
 			blob_heap,
 			guid_heap,
 			tables,
@@ -239,6 +238,10 @@ impl<'data> Metadata<'data> {
 
 	pub fn strings(&self) -> &'data StringsHeap {
 		&self.strings_heap
+	}
+
+	pub fn user_string_data(&self) -> &'data [u8] {
+		self.user_string_data
 	}
 
 	pub fn blob(&self) -> &'data BlobHeap {

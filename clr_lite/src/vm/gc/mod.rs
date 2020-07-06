@@ -13,17 +13,20 @@ pub use object::*;
 pub mod array;
 pub use array::*;
 
+pub mod string;
+pub use string::*;
+
 use std::mem;
 
 pub(crate) struct GcHeap {
-	pub(crate) clr: Option<Weak<RefCell<ClrInternal>>>,
+	pub(crate) clr: ClrLite,
 	memory: Vec<u8>,
 }
 
 impl GcHeap {
-	pub(crate) fn new(size: usize) -> GcHeap {
+	pub(crate) fn new(clr: ClrLite, size: usize) -> GcHeap {
 		GcHeap {
-			clr: None,
+			clr,
 			memory: Vec::with_capacity(size),
 		}
 	}
@@ -73,9 +76,25 @@ impl GcHeap {
 		}
 	}
 
-	pub fn collect(&mut self) {}
+	pub fn alloc_string(&mut self, data: &[u16]) -> ManagedString {
+		let size = mem::size_of::<StringHeader>() + (mem::size_of::<u16>() * data.len());
+		self.ensure_size(size);
+		let base = self.memory.len();
 
-	fn clr(&self) -> Option<ClrLite> {
-		Some(ClrLite(self.clr.as_ref()?.upgrade()?))
+		// 0-initialise memory for array
+		self.memory.resize(base + size, 0);
+
+		unsafe {
+			let mut s =
+				ManagedString(self.memory.as_mut_ptr().offset(base as isize) as *mut StringHeader);
+			let header = s.header_mut();
+			header.header.flags |= ObjectFlags::IS_STRING;
+			header.header.type_id = self.clr.get_type("System.String").unwrap().id();
+			header.length = data.len();
+			s.data_mut().copy_from_slice(data);
+			s
+		}
 	}
+
+	pub fn collect(&mut self) {}
 }

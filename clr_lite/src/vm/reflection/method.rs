@@ -147,6 +147,7 @@ impl fmt::Display for Method {
 }
 
 pub(crate) struct MethodInternal {
+	#[allow(dead_code)]
 	clr: Weak<RefCell<ClrInternal>>,
 	name: String,
 	declaring_type: Weak<TypeInternal>,

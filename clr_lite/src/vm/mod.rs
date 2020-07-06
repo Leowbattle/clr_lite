@@ -18,6 +18,23 @@ use std::rc::Rc;
 #[derive(Clone)]
 pub struct ClrLite(pub(crate) Rc<RefCell<ClrInternal>>);
 
+#[derive(Debug, PartialEq)]
+pub enum RunResult {
+	Void,
+	Err(String),
+	I8(i8),
+	U8(u8),
+	I16(i16),
+	U16(u16),
+	I32(i32),
+	U32(u32),
+	I64(i64),
+	U64(u64),
+	F32(f32),
+	F64(f64),
+	Object { object: Object, data: Box<[u8]> },
+}
+
 impl ClrLite {
 	pub fn new_runtime() -> Result<ClrLite, String> {
 		let mut clr = ClrLite(Rc::new(RefCell::new(ClrInternal::new_runtime()?)));
@@ -111,13 +128,38 @@ impl ClrLite {
 		// TODO Check arguments for validity
 
 		if !m.is_static() {
-			return Err(format!(
+			return RunResult::Err(format!(
 				"Cannot use non-static method {}.{} as entry point",
 				m.declaring_type().unwrap(),
 				m.name()
 			));
 		}
-		Interpreter::new(self.clone()).execute(m, params)
+		let r = Interpreter::new(self.clone()).execute(m, params);
+		match r {
+			Ok(r) => match r {
+				Some(r) => match r {
+					Value::I8(x) => RunResult::I8(x),
+					Value::U8(x) => RunResult::U8(x),
+					Value::I16(x) => RunResult::I16(x),
+					Value::U16(x) => RunResult::U16(x),
+					Value::I32(x) => RunResult::I32(x),
+					Value::U32(x) => RunResult::U32(x),
+					Value::I64(x) => RunResult::I64(x),
+					Value::U64(x) => RunResult::U64(x),
+					Value::F32(x) => RunResult::F32(x),
+					Value::F64(x) => RunResult::F64(x),
+					Value::Object(o) => {
+						let data = o.raw_data(&self).to_vec().into_boxed_slice();
+						RunResult::Object {
+							object: Object(data.as_ptr() as *mut _),
+							data,
+						}
+					}
+				},
+				None => RunResult::Void,
+			},
+			Err(e) => RunResult::Err(e),
+		}
 	}
 
 	pub(crate) fn next_type_id(&mut self) -> TypeID {

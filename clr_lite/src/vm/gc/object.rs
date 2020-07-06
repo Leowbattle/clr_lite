@@ -1,5 +1,7 @@
 use super::*;
 
+use std::slice;
+
 bitflags! {
 	pub struct ObjectFlags : u8 {
 		const NONE = 0x0;
@@ -25,13 +27,26 @@ pub struct Object(pub(crate) *mut ObjectHeader);
 impl Object {
 	fn as_raw_object(&mut self) -> Option<RawObject> {
 		unsafe {
-			let h = *self.0;
-			if h.flags & (ObjectFlags::IS_ARRAY | ObjectFlags::IS_STRING) == ObjectFlags::NONE {
+			if self.header().flags & (ObjectFlags::IS_ARRAY | ObjectFlags::IS_STRING)
+				== ObjectFlags::NONE
+			{
 				Some(RawObject(self.0.offset(1) as *mut u8))
 			} else {
 				None
 			}
 		}
+	}
+
+	pub(crate) fn raw_data<'a>(&'a self, clr: &ClrLite) -> &'a [u8] {
+		let size = if let Some(arr) = self.as_array() {
+			mem::size_of::<ArrayHeader>()
+				+ (clr.types()[arr.header().element_type_id as usize].size() * arr.header().length)
+		} else if let Some(s) = self.as_string() {
+			mem::size_of::<StringHeader>() + (mem::size_of::<u16>() * s.data().len())
+		} else {
+			mem::size_of::<ObjectHeader>() + self.type_of(clr).size()
+		};
+		unsafe { slice::from_raw_parts(self.0 as *const u8, size) }
 	}
 
 	pub fn type_of(&self, clr: &ClrLite) -> Type {
@@ -49,6 +64,14 @@ impl Object {
 	pub fn as_array(&self) -> Option<Array> {
 		if self.header().flags.contains(ObjectFlags::IS_ARRAY) {
 			Some(Array(self.0 as *mut ArrayHeader))
+		} else {
+			None
+		}
+	}
+
+	pub fn as_string(&self) -> Option<ManagedString> {
+		if self.header().flags.contains(ObjectFlags::IS_STRING) {
+			Some(ManagedString(self.0 as *mut StringHeader))
 		} else {
 			None
 		}

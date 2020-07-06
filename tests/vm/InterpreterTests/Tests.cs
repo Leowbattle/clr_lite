@@ -864,5 +864,12 @@ namespace InterpreterTests
 			return arr[i];
 		}
 		#endregion
+
+		#region Strings
+		static string LoadString()
+		{
+			return "I am a C# string";
+		}
+		#endregion
 	}
 }

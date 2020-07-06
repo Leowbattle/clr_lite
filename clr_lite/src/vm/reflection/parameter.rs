@@ -32,6 +32,7 @@ impl fmt::Display for Parameter {
 }
 
 pub(crate) struct ParameterInternal {
+	#[allow(dead_code)]
 	pub(super) clr: Weak<RefCell<ClrInternal>>,
 	pub(super) method: Weak<MethodInternal>,
 	pub(super) name: String,
