@@ -14,8 +14,8 @@ bitflags! {
 #[derive(Copy, Clone, Debug)]
 #[repr(packed)]
 pub struct ObjectHeader {
-	flags: ObjectFlags,
-	type_id: u32,
+	pub flags: ObjectFlags,
+	pub type_id: TypeID,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -31,6 +31,26 @@ impl Object {
 			} else {
 				None
 			}
+		}
+	}
+
+	pub fn type_of(&self, clr: &ClrLite) -> Type {
+		clr.types()[self.header().type_id as usize].clone()
+	}
+
+	pub fn header<'a>(&'a self) -> &'a ObjectHeader {
+		unsafe { &*self.0 }
+	}
+
+	pub fn header_mut<'a>(&'a mut self) -> &'a mut ObjectHeader {
+		unsafe { &mut *self.0 }
+	}
+
+	pub fn as_array(&self) -> Option<Array> {
+		if self.header().flags.contains(ObjectFlags::IS_ARRAY) {
+			Some(Array(self.0 as *mut ArrayHeader))
+		} else {
+			None
 		}
 	}
 

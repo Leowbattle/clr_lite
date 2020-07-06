@@ -95,6 +95,8 @@ impl ClrLite {
 			ulong: self.get_type("System.UInt64").unwrap(),
 			float: self.get_type("System.Single").unwrap(),
 			double: self.get_type("System.Double").unwrap(),
+
+			object: self.get_type("System.Object").unwrap(),
 		};
 		self.0.borrow_mut().primitive_types.replace(primitives);
 
@@ -106,6 +108,8 @@ impl ClrLite {
 	}
 
 	pub fn execute(&mut self, m: Method, params: &mut [Value]) -> RunResult {
+		// TODO Check arguments for validity
+
 		if !m.is_static() {
 			return Err(format!(
 				"Cannot use non-static method {}.{} as entry point",
@@ -116,7 +120,7 @@ impl ClrLite {
 		Interpreter::new(self.clone()).execute(m, params)
 	}
 
-	pub(crate) fn next_type_id(&mut self) -> u32 {
+	pub(crate) fn next_type_id(&mut self) -> TypeID {
 		let mut internal = self.0.borrow_mut();
 		let id = internal.next_type_id;
 		internal.next_type_id += 1;
@@ -158,7 +162,7 @@ pub(crate) struct ClrInternal {
 	types: Vec<Type>,
 	type_map: HashMap<String, Type>,
 
-	next_type_id: u32,
+	next_type_id: TypeID,
 	primitive_types: Option<PrimitiveTypes>,
 }
 
@@ -173,6 +177,8 @@ pub(crate) struct PrimitiveTypes {
 	pub ulong: Type,
 	pub float: Type,
 	pub double: Type,
+
+	pub object: Type,
 }
 
 impl ClrInternal {

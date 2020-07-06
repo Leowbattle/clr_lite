@@ -315,3 +315,11 @@ fn test_create_custom_object() {
 		Ok(Some(Value::I32(5)))
 	);
 }
+
+#[test]
+fn test_create_array() {
+	assert_eq!(
+		run("CreateArray", &mut [Value::I32(4), Value::I32(2)]),
+		Ok(Some(Value::I32(2)))
+	);
+}

@@ -373,6 +373,44 @@ impl<'a> StackFrame<'a> {
 					};
 				}
 
+				Opcodes::Newarr => {
+					let type_token = self.il_get::<MetadataToken>();
+					let t = self.assembly.resolve_type(type_token).unwrap();
+					let length = self.try_pop_i32().unwrap() as usize;
+					let arr = self.gc().alloc_array(t, length);
+					self.push(Value::Object(arr.as_object()));
+				}
+
+				Opcodes::Stelem_I4 => {
+					let value = self.try_pop_i32().unwrap();
+					let index = self.try_pop_i32().unwrap() as usize;
+					let arr = self
+						.try_pop_array()
+						.map_err(|value| format!("Invalid operation: Stelem on {:?}", value))?;
+					let arr = arr.as_mut_slice::<i32>(&self.clr).map_err(|_| {
+						format!(
+							"Cannot use {} as {}",
+							arr.type_of(&self.clr),
+							self.clr.get_type("System.Int32[]").unwrap()
+						)
+					})?;
+					arr[index] = value;
+				}
+				Opcodes::Ldelem_I4 => {
+					let index = self.try_pop_i32().unwrap() as usize;
+					let arr = self
+						.try_pop_array()
+						.map_err(|value| format!("Invalid operation: Stelem on {:?}", value))?;
+					let arr = arr.as_slice::<i32>(&self.clr).map_err(|_| {
+						format!(
+							"Cannot use {} as {}",
+							arr.type_of(&self.clr),
+							self.clr.get_type("System.Int32[]").unwrap()
+						)
+					})?;
+					self.push(Value::I32(arr[index]));
+				}
+
 				_ => {
 					return Err(format!(
 						"Use of unimplemented instruction {:?} at IL_{:04x}",
@@ -446,6 +484,28 @@ impl<'a> StackFrame<'a> {
 
 	fn try_pop(&mut self) -> Option<Value> {
 		self.interpreter.operand_stack.pop()
+	}
+
+	fn try_pop_i32(&mut self) -> Result<i32, Value> {
+		match self.pop() {
+			Value::I32(x) => Ok(x),
+			value => Err(value),
+		}
+	}
+
+	fn try_pop_object(&mut self) -> Result<Object, Value> {
+		match self.pop() {
+			Value::Object(o) => Ok(o),
+			value => Err(value),
+		}
+	}
+
+	fn try_pop_array(&mut self) -> Result<Array, Value> {
+		let o = self.try_pop_object()?;
+		match o.as_array() {
+			Some(arr) => Ok(arr),
+			None => Err(Value::Object(o)),
+		}
 	}
 
 	fn peek(&self) -> Value {

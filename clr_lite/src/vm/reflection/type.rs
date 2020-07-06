@@ -301,7 +301,11 @@ impl Type {
 		t
 	}
 
-	pub fn id(&self) -> u32 {
+	pub fn array_of(&self) -> Type {
+		Type::get_or_create_array_type(ClrLite(self.0.clr.upgrade().unwrap()), self.clone())
+	}
+
+	pub fn id(&self) -> TypeID {
 		self.0.id
 	}
 
@@ -516,6 +520,8 @@ impl fmt::Display for TypeKind {
 	}
 }
 
+pub type TypeID = u32;
+
 // The reason that some fields are wrapped in RefCell and not the whole struct, as
 // pub struct Field(Rc<RefCell<FieldInternal>>) is because the name, namespace, etc
 // methods return references to the fields of this struct, but you can't return a
@@ -524,7 +530,7 @@ impl fmt::Display for TypeKind {
 pub(crate) struct TypeInternal {
 	clr: Weak<RefCell<ClrInternal>>,
 	assembly: Weak<AssemblyInternal>,
-	id: u32,
+	id: TypeID,
 	name: String,
 	namespace: String,
 	full_name: String,
@@ -537,4 +543,76 @@ pub(crate) struct TypeInternal {
 
 	field_map: RefCell<HashMap<String, Field>>,
 	method_map: RefCell<HashMap<String, Method>>,
+}
+
+pub trait HasManagedType {
+	fn managed_type(clr: &ClrLite) -> Type;
+}
+
+impl HasManagedType for i8 {
+	fn managed_type(clr: &ClrLite) -> Type {
+		clr.internal().primitives().sbyte.clone()
+	}
+}
+
+impl HasManagedType for i16 {
+	fn managed_type(clr: &ClrLite) -> Type {
+		clr.internal().primitives().short.clone()
+	}
+}
+
+impl HasManagedType for i32 {
+	fn managed_type(clr: &ClrLite) -> Type {
+		clr.internal().primitives().int.clone()
+	}
+}
+
+impl HasManagedType for i64 {
+	fn managed_type(clr: &ClrLite) -> Type {
+		clr.internal().primitives().long.clone()
+	}
+}
+
+impl HasManagedType for u8 {
+	fn managed_type(clr: &ClrLite) -> Type {
+		clr.internal().primitives().byte.clone()
+	}
+}
+
+impl HasManagedType for u16 {
+	fn managed_type(clr: &ClrLite) -> Type {
+		clr.internal().primitives().ushort.clone()
+	}
+}
+
+impl HasManagedType for u32 {
+	fn managed_type(clr: &ClrLite) -> Type {
+		clr.internal().primitives().uint.clone()
+	}
+}
+
+impl HasManagedType for u64 {
+	fn managed_type(clr: &ClrLite) -> Type {
+		clr.internal().primitives().ulong.clone()
+	}
+}
+
+impl HasManagedType for f32 {
+	fn managed_type(clr: &ClrLite) -> Type {
+		clr.internal().primitives().float.clone()
+	}
+}
+
+impl HasManagedType for f64 {
+	fn managed_type(clr: &ClrLite) -> Type {
+		clr.internal().primitives().double.clone()
+	}
+}
+
+use crate::vm::gc::Object;
+
+impl HasManagedType for Object {
+	fn managed_type(clr: &ClrLite) -> Type {
+		clr.internal().primitives().object.clone()
+	}
 }

@@ -852,5 +852,17 @@ namespace InterpreterTests
 			return o.x;
 		}
 		#endregion
+
+		#region Arrays
+		static int CreateArray(int length, int i)
+		{
+			int[] arr = new int[length];
+			for (int j = 0; j < length; j++)
+			{
+				arr[j] = j;
+			}
+			return arr[i];
+		}
+		#endregion
 	}
 }

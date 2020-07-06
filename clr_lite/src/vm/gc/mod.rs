@@ -10,6 +10,9 @@ pub use raw_object::*;
 pub mod object;
 pub use object::*;
 
+pub mod array;
+pub use array::*;
+
 use std::mem;
 
 pub(crate) struct GcHeap {
@@ -36,12 +39,38 @@ impl GcHeap {
 
 	pub fn alloc(&mut self, t: Type) -> Object {
 		let size = mem::size_of::<ObjectHeader>() + t.size();
+		self.ensure_size(size);
 		let base = self.memory.len();
 
 		// 0-initialise memory for object
 		self.memory.resize(base + size, 0);
 
-		unsafe { Object(self.memory.as_mut_ptr().offset(base as isize) as *mut ObjectHeader) }
+		unsafe {
+			let mut obj =
+				Object(self.memory.as_mut_ptr().offset(base as isize) as *mut ObjectHeader);
+			let header = obj.header_mut();
+			header.type_id = t.id();
+			obj
+		}
+	}
+
+	pub fn alloc_array(&mut self, element_type: Type, length: usize) -> Array {
+		let size = mem::size_of::<ArrayHeader>() + (element_type.size() * length);
+		self.ensure_size(size);
+		let base = self.memory.len();
+
+		// 0-initialise memory for array
+		self.memory.resize(base + size, 0);
+
+		unsafe {
+			let mut arr = Array(self.memory.as_mut_ptr().offset(base as isize) as *mut ArrayHeader);
+			let header = arr.header_mut();
+			header.header.flags |= ObjectFlags::IS_ARRAY;
+			header.header.type_id = element_type.array_of().id();
+			header.element_type_id = element_type.id();
+			header.length = length;
+			arr
+		}
 	}
 
 	pub fn collect(&mut self) {}
