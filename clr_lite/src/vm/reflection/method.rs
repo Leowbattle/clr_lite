@@ -27,7 +27,30 @@ impl Method {
 			.map_err(|e| e.to_string())?;
 
 		let implementation = if def.impl_attributes.internal_call {
-			MethodImplementation::Internal
+			let param_types = {
+				let mut param_types = Vec::with_capacity(signature.params.len());
+				for i in 0..param_types.capacity() {
+					let ptype = Type::get_type_for_element_type(
+						clr.clone(),
+						metadata,
+						&signature.params[i],
+					)
+					.unwrap();
+					param_types.push(ptype.full_name().to_string());
+				}
+				param_types
+			};
+
+			let sig = Method::internall_call_name(
+				&name,
+				&declaring_type,
+				&Type::get_type_for_element_type(clr.clone(), metadata, &signature.return_type)?,
+				&param_types,
+			);
+			MethodImplementation::Internal(
+				clr.get_internal_method(&sig)
+					.ok_or_else(|| format!("No internal method with signature {}", sig))?,
+			)
 		} else if def.attributes.pinvoke_impl {
 			unimplemented!("PInvoke not yet supported")
 		} else if !def.attributes.is_abstract {
@@ -87,6 +110,33 @@ impl Method {
 
 	pub fn name<'a>(&'a self) -> &'a str {
 		&self.0.name
+	}
+
+	fn internall_call_name(
+		name: &str,
+		declaring_type: &Type,
+		return_type: &Type,
+		param_types: &[String],
+	) -> String {
+		use std::fmt::Write;
+
+		let mut s = String::with_capacity(128);
+		write!(
+			s,
+			"{} {}.{}(",
+			return_type.name(),
+			declaring_type.full_name(),
+			name
+		)
+		.unwrap();
+		for i in 0..param_types.len() {
+			write!(s, "{}", param_types[i]).unwrap();
+			if i != param_types.len() - 1 {
+				write!(s, ", ").unwrap();
+			}
+		}
+		write!(s, ")").unwrap();
+		s
 	}
 
 	pub fn declaring_type(&self) -> Option<Type> {
@@ -164,7 +214,7 @@ pub use crate::metadata::tables::{CallingConvention, CharSet};
 pub enum MethodImplementation {
 	None,
 	IL(MethodBody),
-	Internal,
+	Internal(InternalMethod),
 	PInvoke {
 		char_set: CharSet,
 		calling_convention: CallingConvention,

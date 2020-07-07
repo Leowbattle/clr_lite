@@ -593,6 +593,11 @@ namespace InterpreterTests
 		{
 			return Ldc_R4();
 		}
+
+		static void CallConsoleWriteLine()
+		{
+			Console.WriteLine("Wow! Console.WriteLine works now...");
+		}
 		#endregion
 
 		#region Jump and comparisons

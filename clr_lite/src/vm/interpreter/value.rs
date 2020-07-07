@@ -3,6 +3,8 @@ use crate::vm::interpreter::*;
 use std::cmp::Ordering;
 use std::ops::*;
 
+// TODO Support value types
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Value {
 	I8(i8),

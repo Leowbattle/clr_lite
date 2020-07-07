@@ -80,6 +80,11 @@ fn test_return_value() {
 }
 
 #[test]
+fn test_call_console_writeline() {
+	assert_eq!(run("CallConsoleWriteLine", &mut []), RunResult::I32(1));
+}
+
+#[test]
 fn test_goto() {
 	assert_eq!(run("Goto", &mut []), RunResult::I32(4));
 }

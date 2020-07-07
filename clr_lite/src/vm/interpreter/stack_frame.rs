@@ -21,7 +21,7 @@ impl<'a> StackFrame<'a> {
 	pub fn new(clr: ClrLite, interpreter: &'a mut Interpreter, method: Method) -> StackFrame<'a> {
 		let code = match method.implementation() {
 			MethodImplementation::IL(b) => b.code(),
-			_ => unimplemented!(),
+			_ => unreachable!(),
 		};
 
 		StackFrame {

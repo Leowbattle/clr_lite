@@ -1,4 +1,5 @@
 use crate::vm::gc::*;
+use crate::vm::reflection::*;
 use crate::vm::*;
 
 use std::cell::{RefCell, RefMut};
@@ -34,7 +35,11 @@ impl Interpreter {
 	}
 
 	pub fn execute(&mut self, m: Method, params: &mut [Value]) -> Result<Option<Value>, String> {
-		StackFrame::new(self.clr(), self, m).execute(params)
+		match m.implementation() {
+			MethodImplementation::IL(_) => StackFrame::new(self.clr(), self, m).execute(params),
+			MethodImplementation::Internal(fn_ptr) => fn_ptr(&mut self.clr, params),
+			_ => unimplemented!("{}", m),
+		}
 	}
 
 	fn clr(&self) -> ClrLite {
