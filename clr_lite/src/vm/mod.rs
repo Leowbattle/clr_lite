@@ -10,7 +10,7 @@ use interpreter::*;
 mod internal_method;
 use internal_method::*;
 
-use std::cell::{Ref, RefCell};
+use std::cell::{Ref, RefCell, RefMut};
 use std::collections::HashMap;
 use std::env;
 use std::fs;
@@ -176,8 +176,16 @@ impl ClrLite {
 		self.0.borrow()
 	}
 
+	pub(crate) fn internal_mut<'a>(&'a mut self) -> RefMut<'a, ClrInternal> {
+		self.0.borrow_mut()
+	}
+
 	pub(crate) fn get_internal_method(&self, name: &str) -> Option<InternalMethod> {
 		self.0.borrow().internal_methods.get(name).cloned()
+	}
+
+	pub fn output(&self) -> String {
+		self.internal().output.to_string()
 	}
 }
 
@@ -215,6 +223,7 @@ pub(crate) struct ClrInternal {
 	primitive_types: Option<PrimitiveTypes>,
 
 	internal_methods: HashMap<String, InternalMethod>,
+	pub(crate) output: String,
 }
 
 pub(crate) struct PrimitiveTypes {
@@ -249,6 +258,7 @@ impl ClrInternal {
 			next_type_id: 0,
 			primitive_types: None,
 			internal_methods: load_internal_methods(),
+			output: String::new(),
 		})
 	}
 

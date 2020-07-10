@@ -4,11 +4,18 @@ const DATA: &'static [u8] = include_bytes!(
 	"../../../../tests/vm/InterpreterTests/bin/Debug/netcoreapp3.1/InterpreterTests.dll"
 );
 
-fn run(func_name: &str, params: &mut [Value]) -> RunResult {
+fn run_with_output(func_name: &str, params: &mut [Value]) -> (RunResult, String) {
 	let mut clr = ClrLite::new_runtime().unwrap();
 	let _a = clr.load_assembly_from_data(DATA).unwrap();
 	let tests = clr.get_type("InterpreterTests.Tests").unwrap();
-	clr.execute(tests.get_method(func_name).unwrap(), params)
+	(
+		clr.execute(tests.get_method(func_name).unwrap(), params),
+		clr.output(),
+	)
+}
+
+fn run(func_name: &str, params: &mut [Value]) -> RunResult {
+	run_with_output(func_name, params).0
 }
 
 #[test]
@@ -81,7 +88,13 @@ fn test_return_value() {
 
 #[test]
 fn test_call_console_writeline() {
-	assert_eq!(run("CallConsoleWriteLine", &mut []), RunResult::I32(1));
+	assert_eq!(
+		run_with_output("CallConsoleWriteLine", &mut []),
+		(
+			RunResult::Void,
+			"Wow! Console.WriteLine works now...\n".to_string()
+		)
+	);
 }
 
 #[test]
